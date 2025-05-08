@@ -1,0 +1,78 @@
+@startuml Monolithic_Supabase_Architecture
+
+!theme materia
+
+title Monolithic Go Newsletter Platform with Supabase (with Scheduling)
+
+actor Editor
+actor Subscriber
+actor "Web/Mobile Client" as Client
+
+package "Go Newsletter API (Monolith)" {
+  component "REST/GraphQL API" as API_Endpoint
+  component "Auth Module (JWT)" as AuthModule
+  component "Newsletter Module" as NewsletterModule
+  component "User Module (Editors)" as UserModule
+  component "Subscription Module" as SubscriptionModule
+  component "Publishing Module" as PublishingModule
+  component "Email Integration Module" as EmailIntegrationModule
+  component "Scheduler Module" as SchedulerModule
+}
+
+package "Supabase" {
+  database "PostgreSQL" as DB {
+    rectangle "Profiles Table (Editors)" as ProfilesTable {
+        note top: Extends auth.users; includes `is_admin`
+    }
+    rectangle "Newsletters Table" as NewslettersTable
+    rectangle "Published Posts Table" as PostsTable {
+        note top: Includes fields like `scheduled_at`, `status`
+    }
+    rectangle "Subscribers Table" as SubscribersTable
+  }
+  component "Supabase Auth" as SupabaseAuth
+  component "Supabase Storage" as SupabaseStorage
+}
+
+cloud "External Email Service" as ExtEmailService
+note right of ExtEmailService
+  (e.g., Resend, SendGrid)
+end note
+
+Client --> API_Endpoint : HTTP/S Requests (REST/GraphQL)
+
+Editor --> Client : Uses
+Subscriber --> Client : Uses
+
+API_Endpoint --> AuthModule : Handles Auth
+API_Endpoint --> UserModule : Manages Editors
+API_Endpoint --> NewsletterModule : Manages Newsletters
+API_Endpoint --> SubscriptionModule : Manages Subscriptions
+API_Endpoint --> PublishingModule : Manages Posts (Immediate & Scheduled)
+API_Endpoint --> SchedulerModule : (Indirectly via Publishing Module or for admin)
+
+AuthModule <--> SupabaseAuth : User Auth, JWT
+UserModule --> DB : CRUD Profiles (ProfilesTable)
+NewsletterModule --> DB : CRUD Newsletters (NewslettersTable)
+SubscriptionModule --> DB : CRUD Subscribers (SubscribersTable)
+PublishingModule --> DB : CRUD Posts (PostsTable) - Marks for scheduling
+
+SchedulerModule -> DB : Queries for due posts (PostsTable)
+SchedulerModule --> PublishingModule : Triggers actual sending
+
+PublishingModule --> EmailIntegrationModule : Send Emails (when publishing)
+
+EmailIntegrationModule --> ExtEmailService : Relay Emails
+
+SupabaseAuth --> DB : (Manages auth.users, linked to ProfilesTable)
+
+note right of DB
+  Supabase provides:
+  - PostgreSQL Database
+  - Authentication
+  - (Optional) Storage for assets
+  All data (Editor Profiles, Newsletters, Posts, Subscribers)
+  can be stored within Supabase's PostgreSQL.
+end note
+
+@enduml 
