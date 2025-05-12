@@ -9,6 +9,9 @@ This document outlines the proposed database schema for the Go Newsletter platfo
 3.  **`subscribers`**: Manages email subscriptions to newsletters.
 4.  **`published_posts`**: Archives posts published to newsletters.
 
+![Editor | Mermaid Chart-2025-05-12-160357](https://github.com/user-attachments/assets/063fba19-1bbe-4a36-aef3-7fd5f025282c)
+
+
 ---
 
 ## Table Definitions
