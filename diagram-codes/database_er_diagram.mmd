@@ -1,0 +1,47 @@
+---
+config:
+  theme: default
+---
+erDiagram
+  PROFILES {
+    UUID id
+    TEXT full_name
+    TEXT avatar_url
+    BOOLEAN is_admin
+    TIMESTAMPTZ created_at
+    TIMESTAMPTZ updated_at
+  }
+  NEWSLETTERS {
+    UUID id
+    UUID editor_id
+    TEXT name
+    TEXT description
+    TIMESTAMPTZ created_at
+    TIMESTAMPTZ updated_at
+  }
+  SUBSCRIPTION {
+    UUID id
+    UUID newsletter_id
+    TEXT email
+    TIMESTAMPTZ subscribed_at
+    TIMESTAMPTZ unsubscribed_at
+    TEXT unsubscribe_token
+    BOOLEAN is_confirmed
+    TEXT confirmation_token
+  }
+  PUBLISHED_POSTS {
+    UUID id
+    UUID newsletter_id
+    UUID editor_id
+    TEXT title
+    TEXT content_html
+    TEXT content_text
+    TEXT status
+    TIMESTAMPTZ scheduled_at
+    TIMESTAMPTZ published_at
+    TIMESTAMPTZ created_at
+  }
+
+  PROFILES }|--o{ NEWSLETTERS : manages
+  SUBSCRIPTION }o--|{ NEWSLETTERS : log_subscription_to
+  PUBLISHED_POSTS }o--|| NEWSLETTERS : relate_to
