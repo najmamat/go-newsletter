@@ -10,248 +10,6 @@ servers:
   - url: http://localhost:8080/api/v1 # Replace with your actual deployed API URL
     description: Development server
 
-components:
-  schemas:
-    Error:
-      type: object
-      properties:
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
-      required:
-        - code
-        - message
-
-    EditorProfile:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: User ID from Supabase Auth.
-          readOnly: true
-        email:
-          type: string
-          format: email
-          description: Editor's email address (from Supabase Auth).
-          readOnly: true
-        full_name:
-          type: string
-          nullable: true
-        avatar_url:
-          type: string
-          format: url
-          nullable: true
-        is_admin:
-          type: boolean
-          description: Indicates if the editor has administrative privileges.
-          readOnly: true
-          default: false
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-
-    Newsletter:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        editor_id:
-          type: string
-          format: uuid
-          readOnly: true
-        name:
-          type: string
-        description:
-          type: string
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-        - name
-
-    NewsletterCreate:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Name of the newsletter.
-        description:
-          type: string
-          nullable: true
-          description: Optional description of the newsletter.
-      required:
-        - name
-
-    NewsletterUpdate:
-      type: object
-      properties:
-        name:
-          type: string
-          description: New name of the newsletter.
-        description:
-          type: string
-          nullable: true
-          description: New optional description of the newsletter.
-
-    Subscriber:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        newsletter_id:
-          type: string
-          format: uuid
-          readOnly: true
-        email:
-          type: string
-          format: email
-        subscribed_at:
-          type: string
-          format: date-time
-          readOnly: true
-        is_confirmed:
-          type: boolean
-          readOnly: true
-      required:
-        - email
-
-    SubscriptionRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-          description: Email address to subscribe.
-      required:
-        - email
-
-    PublishedPost:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        newsletter_id:
-          type: string
-          format: uuid
-          readOnly: true
-        editor_id:
-          type: string
-          format: uuid
-          readOnly: true
-        title:
-          type: string
-        content_html:
-          type: string
-          description: HTML content of the post.
-        content_text:
-          type: string
-          nullable: true
-          description: Plain text version of the post content.
-        status:
-          type: string
-          description: "Status of the post (e.g., 'draft', 'scheduled', 'publishing', 'published', 'failed')"
-          readOnly: true # Typically set by the backend
-        scheduled_at:
-          type: string
-          format: date-time
-          nullable: true
-          description: The time at which the post is scheduled to be published (ISO 8601 format in UTC).
-        published_at:
-          type: string
-          format: date-time
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-        - title
-        - content_html
-
-    PublishPostRequest:
-      type: object
-      properties:
-        title:
-          type: string
-        content_html:
-          type: string
-          description: HTML content of the post.
-        content_text:
-          type: string
-          nullable: true
-          description: Plain text version of the post content.
-        scheduled_at:
-          type: string
-          format: date-time
-          nullable: true
-          description: Optional. If provided, the post will be scheduled for this time (ISO 8601 format in UTC). Otherwise, published immediately.
-      required:
-        - title
-        - content_html
-
-    AuthCredentials:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-      required:
-        - email
-        - password
-        
-    AuthResponse:
-      type: object
-      properties:
-        access_token:
-          type: string
-        # refresh_token: # Supabase handles refresh tokens automatically with its client libraries
-        #   type: string
-        # token_type:
-        #   type: string
-        #   default: Bearer
-        # expires_in:
-        #   type: integer
-        user:
-          $ref: '#/components/schemas/EditorProfile' # Or a simplified user object
-          
-    PasswordResetRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-      required:
-        - email
-
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
 security:
   - bearerAuth: []
 
@@ -1021,4 +779,244 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error' 
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+        - code
+        - message
+
+    EditorProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User ID from Supabase Auth.
+          readOnly: true
+        email:
+          type: string
+          format: email
+          description: Editor's email address (from Supabase Auth).
+          readOnly: true
+        full_name:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          format: url
+          nullable: true
+        is_admin:
+          type: boolean
+          description: Indicates if the editor has administrative privileges.
+          readOnly: true
+          default: false
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    Newsletter:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        editor_id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - name
+
+    NewsletterCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the newsletter.
+        description:
+          type: string
+          nullable: true
+          description: Optional description of the newsletter.
+      required:
+        - name
+
+    NewsletterUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New name of the newsletter.
+        description:
+          type: string
+          nullable: true
+          description: New optional description of the newsletter.
+
+    Subscriber:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        newsletter_id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+        subscribed_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_confirmed:
+          type: boolean
+          readOnly: true
+      required:
+        - email
+
+    SubscriptionRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address to subscribe.
+      required:
+        - email
+
+    PublishedPost:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        newsletter_id:
+          type: string
+          format: uuid
+          readOnly: true
+        editor_id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+        content_html:
+          type: string
+          description: HTML content of the post.
+        content_text:
+          type: string
+          nullable: true
+          description: Plain text version of the post content.
+        status:
+          type: string
+          description: "Status of the post (e.g., 'draft', 'scheduled', 'publishing', 'published', 'failed')"
+          readOnly: true # Typically set by the backend
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: The time at which the post is scheduled to be published (ISO 8601 format in UTC).
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - title
+        - content_html
+
+    PublishPostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        content_html:
+          type: string
+          description: HTML content of the post.
+        content_text:
+          type: string
+          nullable: true
+          description: Plain text version of the post content.
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Optional. If provided, the post will be scheduled for this time (ISO 8601 format in UTC). Otherwise, published immediately.
+      required:
+        - title
+        - content_html
+
+    AuthCredentials:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        # refresh_token: # Supabase handles refresh tokens automatically with its client libraries
+        #   type: string
+        # token_type:
+        #   type: string
+        #   default: Bearer
+        # expires_in:
+        #   type: integer
+        user:
+          $ref: '#/components/schemas/EditorProfile' # Or a simplified user object
+
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
