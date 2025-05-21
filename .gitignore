@@ -26,3 +26,25 @@ go.work.sum
 
 .cursor
 .idea
+
+# Local environment variables
+.env
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Go build outputs (if any stored locally, though Docker build is primary)
+# go-newsletter # Example if you build locally without Docker
+
+# Log files
+*.log
+
+# Test coverage
+coverage.out
