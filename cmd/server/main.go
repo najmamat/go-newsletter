@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -90,8 +91,23 @@ func initializeDatabase(logger *slog.Logger) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("database connection parameters are not set properly")
 	}
 
+	// Parse config and configure connection pool
+	config, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse database config: %w", err)
+	}
+
+	// Configure connection pool settings
+	config.MaxConns = 10
+	config.MinConns = 2
+	config.MaxConnLifetime = time.Hour
+	config.MaxConnIdleTime = time.Minute * 30
+
+	// Disable automatic prepared statement caching to avoid conflicts
+	config.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeExec
+
 	// Initialize connection pool
-	dbpool, err := pgxpool.New(context.Background(), databaseURL)
+	dbpool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
