@@ -1,0 +1,1022 @@
+openapi: 3.0.3
+info:
+  title: Go Newsletter API
+  version: v0.1.0
+  description: |
+    API for the Go Newsletter platform. Enables registered users (Editors) 
+    to curate and publish their own newsletters that other users (Subscribers) can subscribe to.
+    Supports immediate and scheduled publishing, and admin functionalities.
+servers:
+  - url: http://localhost:8080/api/v1 # Replace with your actual deployed API URL
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/signup:
+    post:
+      summary: Editor Sign Up
+      description: Register a new editor. Supabase Auth handles the actual user creation.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentials'
+      responses:
+        '200': # Supabase client might return user object or session upon successful signup
+          description: Signup successful, session returned (or user object)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/signin:
+    post:
+      summary: Editor Sign In
+      description: Authenticate an editor and receive a JWT.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentials'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/password-reset-request:
+    post:
+      summary: Request Password Reset
+      description: Initiates a password reset flow (e.g., sends an email with a reset link via Supabase).
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '200':
+          description: Password reset email sent (or instruction provided).
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Note: Actual password reset via link is typically handled by Supabase UI/flow
+
+  /me:
+    get:
+      summary: Get Current Editor Profile
+      tags:
+        - Editor
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current editor's profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditorProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update Current Editor Profile
+      tags:
+        - Editor
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object # Define properties for profile update, e.g., full_name, avatar_url
+              properties:
+                full_name:
+                  type: string
+                  nullable: true
+                avatar_url:
+                  type: string
+                  format: url
+                  nullable: true
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditorProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /newsletters:
+    get:
+      summary: List Editor's Newsletters
+      description: Retrieves a list of newsletters owned by the authenticated editor.
+      tags:
+        - Newsletters
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of newsletters.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Newsletter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create Newsletter
+      description: Creates a new newsletter for the authenticated editor.
+      tags:
+        - Newsletters
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewsletterCreate'
+      responses:
+        '201':
+          description: Newsletter created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Newsletter'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /newsletters/{newsletterId}:
+    parameters:
+      - name: newsletterId
+        in: path
+        required: true
+        description: ID of the newsletter to operate on.
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get Newsletter Details
+      description: Retrieves details of a specific newsletter. Requires editor ownership.
+      tags:
+        - Newsletters
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Newsletter details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Newsletter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update Newsletter
+      description: Updates details of a specific newsletter. Requires editor ownership.
+      tags:
+        - Newsletters
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewsletterUpdate'
+      responses:
+        '200':
+          description: Newsletter updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Newsletter'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete Newsletter
+      description: Deletes a specific newsletter. Requires editor ownership.
+      tags:
+        - Newsletters
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Newsletter deleted successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /newsletters/{newsletterId}/subscribe:
+    parameters:
+      - name: newsletterId
+        in: path
+        required: true
+        description: ID of the newsletter to subscribe to.
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Subscribe to Newsletter
+      description: Allows a user to subscribe to a newsletter using their email address.
+      tags:
+        - Subscriptions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionRequest'
+      responses:
+        '200': # Or 202 if processing async confirmation
+          description: Subscription successful (or confirmation email sent).
+          content:
+            application/json:
+              schema: # Could return the subscriber object or just a success message
+                type: object
+                properties:
+                  message:
+                    type: string
+                  subscriber:
+                    $ref: '#/components/schemas/Subscriber' 
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound' # If newsletter doesn't exist
+        '409':
+          $ref: '#/components/responses/Conflict' # If already subscribed
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+          
+  /subscribe/confirm/{confirmationToken}:
+    parameters:
+      - name: confirmationToken
+        in: path
+        required: true
+        description: Token sent to user email for confirming subscription.
+        schema:
+          type: string
+    get:
+      summary: Confirm Subscription
+      description: Confirms a subscription using a token from email.
+      tags:
+        - Subscriptions
+      responses:
+        '200':
+          description: Subscription confirmed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest' # e.g. invalid token
+        '404':
+          $ref: '#/components/responses/NotFound' # e.g. token not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /unsubscribe/{unsubscribeToken}:
+    parameters:
+      - name: unsubscribeToken
+        in: path
+        required: true
+        description: Token for unsubscribing from a newsletter.
+        schema:
+          type: string
+    get: # Or POST, GET is simpler for email links
+      summary: Unsubscribe from Newsletter
+      description: Allows a user to unsubscribe using a unique token from an email.
+      tags:
+        - Subscriptions
+      responses:
+        '200':
+          description: Unsubscribed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest' # e.g. invalid token
+        '404':
+          $ref: '#/components/responses/NotFound' # e.g. token not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /newsletters/{newsletterId}/subscribers:
+    parameters:
+      - name: newsletterId
+        in: path
+        required: true
+        description: ID of the newsletter.
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: List Subscribers of a Newsletter
+      description: Retrieves a list of subscribers for a specific newsletter. Requires editor ownership.
+      tags:
+        - Newsletters
+        - Subscriptions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of subscribers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subscriber'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /newsletters/{newsletterId}/posts:
+    parameters:
+      - name: newsletterId
+        in: path
+        required: true
+        description: ID of the newsletter.
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: List Published Posts for a Newsletter
+      description: Retrieves a list of published posts for a specific newsletter. Requires editor ownership. This lists *already published* posts.
+      tags:
+        - Publishing
+        - Newsletters
+      security:
+        - bearerAuth: [] # Or could be public with pagination
+      responses:
+        '200':
+          description: A list of published posts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublishedPost'
+        '401':
+          $ref: '#/components/responses/Unauthorized' # If auth required and not provided/invalid
+        '403':
+          $ref: '#/components/responses/Forbidden' # If auth provided but not owner
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Publish or Schedule a New Post to Newsletter
+      description: Creates a new post. If `scheduled_at` is provided, the post is scheduled; otherwise, it's published immediately. Requires editor ownership.
+      tags:
+        - Publishing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishPostRequest'
+      responses:
+        '201':
+          description: Post published successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishedPost'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /newsletters/{newsletterId}/scheduled-posts:
+    parameters:
+      - name: newsletterId
+        in: path
+        required: true
+        description: ID of the newsletter.
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: List Scheduled Posts for a Newsletter
+      description: Retrieves a list of posts scheduled for future publication for a specific newsletter. Requires editor ownership.
+      tags:
+        - Publishing
+        - Newsletters
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of scheduled posts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublishedPost' # Scheduled posts share the same structure
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /newsletters/{newsletterId}/scheduled-posts/{postId}:
+    parameters:
+      - name: newsletterId
+        in: path
+        required: true
+        description: ID of the newsletter.
+        schema:
+          type: string
+          format: uuid
+      - name: postId
+        in: path
+        required: true
+        description: ID of the scheduled post to manage.
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a Specific Scheduled Post
+      description: Retrieves details of a specific scheduled post. Requires editor ownership.
+      tags:
+        - Publishing
+        - Newsletters
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Scheduled post details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishedPost'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a Scheduled Post
+      description: Allows an editor to update the content or `scheduled_at` time of a post that is scheduled but not yet published. Requires editor ownership.
+      tags:
+        - Publishing
+        - Newsletters
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishPostRequest' # Can reuse, as it contains all editable fields
+      responses:
+        '200':
+          description: Scheduled post updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishedPost'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Cancel (Delete) a Scheduled Post
+      description: Removes a post that is scheduled but not yet published. Requires editor ownership.
+      tags:
+        - Publishing
+        - Newsletters
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Scheduled post cancelled successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+# Admin specific endpoints (example)
+  /admin/newsletters:
+    get:
+      summary: (Admin) List All Newsletters
+      description: Retrieves a list of all newsletters in the system. Requires admin privileges.
+      tags:
+        - Admin
+        - Newsletters
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of all newsletters.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Newsletter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /admin/newsletters/{newsletterId}:
+    parameters:
+      - name: newsletterId
+        in: path
+        required: true
+        description: ID of the newsletter to manage.
+        schema:
+          type: string
+          format: uuid
+    delete:
+      summary: (Admin) Delete Any Newsletter
+      description: Deletes any newsletter in the system. Requires admin privileges.
+      tags:
+        - Admin
+        - Newsletters
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Newsletter deleted successfully by admin.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /admin/users:
+    get:
+      summary: (Admin) List All Users (Profiles)
+      description: Retrieves a list of all user profiles. Requires admin privileges.
+      tags:
+        - Admin
+        - Editor
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of all user profiles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EditorProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /admin/users/{userId}/grant-admin:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user to grant admin privileges.
+        schema:
+          type: string
+          format: uuid
+    put:
+      summary: (Admin) Grant Admin Privileges
+      description: Grants admin privileges to a specified user. Requires admin privileges.
+      tags:
+        - Admin
+        - Editor
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Admin privileges granted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditorProfile' # Return updated profile
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /admin/users/{userId}/revoke-admin:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user to revoke admin privileges from.
+        schema:
+          type: string
+          format: uuid
+    put:
+      summary: (Admin) Revoke Admin Privileges
+      description: Revokes admin privileges from a specified user. Requires admin privileges.
+      tags:
+        - Admin
+        - Editor
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Admin privileges revoked successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditorProfile' # Return updated profile
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+# Standardized responses
+components:
+  responses:
+    BadRequest:
+      description: Bad Request - The server cannot or will not process the request due to something that is perceived to be a client error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized - Authentication is required and has failed or has not yet been provided.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden - The server understood the request but refuses to authorize it.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found - The requested resource could not be found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Conflict - The request could not be completed due to a conflict with the current state of the resource (e.g., duplicate entry).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Internal Server Error - A generic error message, given when an unexpected condition was encountered.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+        - code
+        - message
+
+    EditorProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User ID from Supabase Auth.
+          readOnly: true
+        email:
+          type: string
+          format: email
+          description: Editor's email address (from Supabase Auth).
+          readOnly: true
+        full_name:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          format: url
+          nullable: true
+        is_admin:
+          type: boolean
+          description: Indicates if the editor has administrative privileges.
+          readOnly: true
+          default: false
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    Newsletter:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        editor_id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - name
+
+    NewsletterCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the newsletter.
+        description:
+          type: string
+          nullable: true
+          description: Optional description of the newsletter.
+      required:
+        - name
+
+    NewsletterUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New name of the newsletter.
+        description:
+          type: string
+          nullable: true
+          description: New optional description of the newsletter.
+
+    Subscriber:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        newsletter_id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+        subscribed_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_confirmed:
+          type: boolean
+          readOnly: true
+      required:
+        - email
+
+    SubscriptionRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address to subscribe.
+      required:
+        - email
+
+    PublishedPost:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        newsletter_id:
+          type: string
+          format: uuid
+          readOnly: true
+        editor_id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+        content_html:
+          type: string
+          description: HTML content of the post.
+        content_text:
+          type: string
+          nullable: true
+          description: Plain text version of the post content.
+        status:
+          type: string
+          description: "Status of the post (e.g., 'draft', 'scheduled', 'publishing', 'published', 'failed')"
+          readOnly: true # Typically set by the backend
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: The time at which the post is scheduled to be published (ISO 8601 format in UTC).
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - title
+        - content_html
+
+    PublishPostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        content_html:
+          type: string
+          description: HTML content of the post.
+        content_text:
+          type: string
+          nullable: true
+          description: Plain text version of the post content.
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Optional. If provided, the post will be scheduled for this time (ISO 8601 format in UTC). Otherwise, published immediately.
+      required:
+        - title
+        - content_html
+
+    AuthCredentials:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        # refresh_token: # Supabase handles refresh tokens automatically with its client libraries
+        #   type: string
+        # token_type:
+        #   type: string
+        #   default: Bearer
+        # expires_in:
+        #   type: integer
+        user:
+          $ref: '#/components/schemas/EditorProfile' # Or a simplified user object
+
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

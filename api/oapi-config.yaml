@@ -1,0 +1,11 @@
+# Configuration for oapi-codegen
+package: generated
+output: pkg/generated/api.go
+generate:
+  models: true
+  chi-server: true
+  client: true
+  embedded-spec: true
+output-options:
+  skip-fmt: false
+  skip-prune: true 
