@@ -46,7 +46,7 @@ dev: ## Run in development mode with auto-reload
 # Install development dependencies
 dev-deps: ## Install development dependencies
 	@echo "Installing development dependencies..."
-	go install github.com/cosmtrek/air@latest
+	go install github.com/air-verse/air@latest
 	go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 
 # Format code
@@ -87,4 +87,4 @@ migrate-down: ## Run database migrations down
 
 # Full development setup
 setup: dev-deps tidy generate fmt ## Set up development environment
-	@echo "Development environment set up complete!" 
+	@echo "Development environment set up complete!"
