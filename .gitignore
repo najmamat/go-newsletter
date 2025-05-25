@@ -27,8 +27,6 @@ go.work.sum
 .cursor
 .idea
 
-# Local environment variables
-.env
 
 # IDEs and editors
 .vscode/
