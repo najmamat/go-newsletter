@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -10,22 +9,18 @@ import (
 	"strings"
 	"time"
 
+	"go-newsletter/internal/repository"
+	"go-newsletter/internal/server"
+	"go-newsletter/internal/services"
+	"go-newsletter/internal/utils"
+	"go-newsletter/pkg/generated"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
-
-// Profile struct to match the database table
-type Profile struct {
-	ID        string    `json:"id"`
-	FullName  *string   `json:"full_name,omitempty"` // Use pointers for nullable fields
-	AvatarURL *string   `json:"avatar_url,omitempty"`
-	IsAdmin   bool      `json:"is_admin"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
 
 func main() {
 	// Initialize logger
@@ -39,7 +34,7 @@ func main() {
 	}
 
 	// Setup server configuration
-	port := getEnvWithDefault("PORT", "8080")
+	port := utils.GetEnvWithDefault("PORT", "8080")
 
 	// Setup database connection
 	dbpool, err := initializeDatabase(logger)
@@ -49,8 +44,13 @@ func main() {
 	}
 	defer dbpool.Close()
 
+	// Initialize dependencies using dependency injection
+	profileRepo := repository.NewProfileRepository(dbpool, logger)
+	profileService := services.NewProfileService(profileRepo, logger)
+	apiServer := server.NewServer(profileService, logger)
+
 	// Initialize router and middleware
-	r := setupRouter(logger, dbpool)
+	r := setupRouter(logger, apiServer)
 
 	// Start server
 	logger.Info("Starting server", "port", port)
@@ -58,13 +58,6 @@ func main() {
 		logger.Error("Server failed to start", "error", err)
 		os.Exit(1)
 	}
-}
-
-func getEnvWithDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }
 
 func initializeDatabase(logger *slog.Logger) (*pgxpool.Pool, error) {
@@ -121,7 +114,7 @@ func initializeDatabase(logger *slog.Logger) (*pgxpool.Pool, error) {
 	return dbpool, nil
 }
 
-func setupRouter(logger *slog.Logger, dbpool *pgxpool.Pool) chi.Router {
+func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 	r := chi.NewRouter()
 
 	// Middleware
@@ -135,48 +128,10 @@ func setupRouter(logger *slog.Logger, dbpool *pgxpool.Pool) chi.Router {
 		w.Write([]byte("OK"))
 	})
 
-	// API routes
-	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/profiles", handleGetProfiles(logger, dbpool))
-	})
+	// Mount the generated API routes
+	r.Mount("/api/v1", generated.HandlerFromMux(apiServer, chi.NewRouter()))
 
 	return r
-}
-
-//TODO: only temporary for testing purposes, later delete this
-func handleGetProfiles(logger *slog.Logger, dbpool *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := dbpool.Query(context.Background(), "SELECT id, full_name, avatar_url, is_admin, created_at, updated_at FROM public.profiles")
-		if err != nil {
-			logger.ErrorContext(r.Context(), "Failed to query profiles", "error", err)
-			http.Error(w, "Failed to retrieve profiles", http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
-
-		profiles := []Profile{}
-		for rows.Next() {
-			var p Profile
-			if err := rows.Scan(&p.ID, &p.FullName, &p.AvatarURL, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt); err != nil {
-				logger.ErrorContext(r.Context(), "Failed to scan profile row", "error", err)
-				http.Error(w, "Failed to process profiles", http.StatusInternalServerError)
-				return
-			}
-			profiles = append(profiles, p)
-		}
-
-		if rows.Err() != nil {
-			logger.ErrorContext(r.Context(), "Error iterating profile rows", "error", rows.Err())
-			http.Error(w, "Failed to retrieve profiles data", http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(profiles); err != nil {
-			logger.ErrorContext(r.Context(), "Failed to encode profiles to JSON", "error", err)
-			http.Error(w, "Failed to prepare response", http.StatusInternalServerError)
-		}
-	}
 }
 
 // SlogMiddleware is a chi middleware for logging requests using slog.
