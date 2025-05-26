@@ -5,12 +5,11 @@ import (
 	"log/slog"
 	"net/http"
 
+	"go-newsletter/internal/middleware"
 	"go-newsletter/internal/models"
 	"go-newsletter/internal/services"
 	"go-newsletter/internal/utils"
 	"go-newsletter/pkg/generated"
-
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Server implements the generated ServerInterface
@@ -87,7 +86,13 @@ func (s *Server) GetAdminNewsletters(w http.ResponseWriter, r *http.Request) {
 	s.notImplemented(w, r)
 }
 
-func (s *Server) DeleteAdminNewslettersNewsletterId(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID) {
+func (s *Server) DeleteAdminNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("DeleteAdminNewslettersNewsletterId called", "newsletterId", newsletterId)
 	s.notImplemented(w, r)
 }
 
@@ -107,11 +112,33 @@ func (s *Server) GetAdminUsers(w http.ResponseWriter, r *http.Request) {
 	s.respondJSON(w, http.StatusOK, editorProfiles)
 }
 
-func (s *Server) PutAdminUsersUserIdGrantAdmin(w http.ResponseWriter, r *http.Request, userId openapi_types.UUID) {
+func (s *Server) PutAdminUsersUserIdGrantAdmin(w http.ResponseWriter, r *http.Request) {
+	userId, ok := middleware.GetUUIDFromContext(r.Context(), "userId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("userId not found in context"))
+		return
+	}
+	s.logger.Info("PutAdminUsersUserIdGrantAdmin called", "userId", userId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) PutAdminUsersUserIdRevokeAdmin(w http.ResponseWriter, r *http.Request, userId openapi_types.UUID) {
+func (s *Server) PutAdminUsersUserIdRevokeAdmin(w http.ResponseWriter, r *http.Request) {
+	userId, ok := middleware.GetUUIDFromContext(r.Context(), "userId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("userId not found in context"))
+		return
+	}
+	s.logger.Info("PutAdminUsersUserIdRevokeAdmin called", "userId", userId)
+	s.notImplemented(w, r)
+}
+
+func (s *Server) DeleteAdminUsersUserId(w http.ResponseWriter, r *http.Request) {
+	userId, ok := middleware.GetUUIDFromContext(r.Context(), "userId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("userId not found in context"))
+		return
+	}
+	s.logger.Info("DeleteAdminUsersUserId called", "userId", userId)
 	s.notImplemented(w, r)
 }
 
@@ -158,47 +185,148 @@ func (s *Server) PostNewsletters(w http.ResponseWriter, r *http.Request) {
 	s.notImplemented(w, r)
 }
 
-func (s *Server) DeleteNewslettersNewsletterId(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID) {
+func (s *Server) DeleteNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("DeleteNewslettersNewsletterId called", "newsletterId", newsletterId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) GetNewslettersNewsletterId(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID) {
+func (s *Server) GetNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("GetNewslettersNewsletterId called", "newsletterId", newsletterId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) PutNewslettersNewsletterId(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID) {
+func (s *Server) PutNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("PutNewslettersNewsletterId called", "newsletterId", newsletterId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) GetNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID) {
+func (s *Server) GetNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("GetNewslettersNewsletterIdPosts called", "newsletterId", newsletterId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) PostNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID) {
+func (s *Server) PostNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("PostNewslettersNewsletterIdPosts called", "newsletterId", newsletterId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) GetNewslettersNewsletterIdScheduledPosts(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID) {
+func (s *Server) GetNewslettersNewsletterIdScheduledPosts(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("GetNewslettersNewsletterIdScheduledPosts called", "newsletterId", newsletterId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) DeleteNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID, postId openapi_types.UUID) {
+func (s *Server) DeleteNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	postId, ok := middleware.GetUUIDFromContext(r.Context(), "postId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("postId not found in context"))
+		return
+	}
+	s.logger.Info("DeleteNewslettersNewsletterIdScheduledPostsPostId called", "newsletterId", newsletterId, "postId", postId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) GetNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID, postId openapi_types.UUID) {
+func (s *Server) GetNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	postId, ok := middleware.GetUUIDFromContext(r.Context(), "postId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("postId not found in context"))
+		return
+	}
+	s.logger.Info("GetNewslettersNewsletterIdScheduledPostsPostId called", "newsletterId", newsletterId, "postId", postId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) PutNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID, postId openapi_types.UUID) {
+func (s *Server) PutNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	postId, ok := middleware.GetUUIDFromContext(r.Context(), "postId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("postId not found in context"))
+		return
+	}
+	s.logger.Info("PutNewslettersNewsletterIdScheduledPostsPostId called", "newsletterId", newsletterId, "postId", postId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) PostNewslettersNewsletterIdSubscribe(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID) {
+func (s *Server) PostNewslettersNewsletterIdSubscribe(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("PostNewslettersNewsletterIdSubscribe called", "newsletterId", newsletterId)
 	s.notImplemented(w, r)
 }
 
-func (s *Server) GetNewslettersNewsletterIdSubscribers(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID) {
+func (s *Server) PostNewslettersNewsletterIdUnsubscribe(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("PostNewslettersNewsletterIdUnsubscribe called", "newsletterId", newsletterId)
+	s.notImplemented(w, r)
+}
+
+func (s *Server) GetNewslettersNewsletterIdConfirmSubscription(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("GetNewslettersNewsletterIdConfirmSubscription called", "newsletterId", newsletterId)
+	s.notImplemented(w, r)
+}
+
+func (s *Server) GetNewslettersNewsletterIdSubscribers(w http.ResponseWriter, r *http.Request) {
+	newsletterId, ok := middleware.GetUUIDFromContext(r.Context(), "newsletterId")
+	if !ok {
+		s.handleError(w, r, models.NewBadRequestError("newsletterId not found in context"))
+		return
+	}
+	s.logger.Info("GetNewslettersNewsletterIdSubscribers called", "newsletterId", newsletterId)
 	s.notImplemented(w, r)
 }
 

@@ -18,7 +18,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -149,94 +148,29 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 		// Newsletter management (editor-owned)
 		r.Get("/newsletters", apiServer.GetNewsletters)
 		r.Post("/newsletters", apiServer.PostNewsletters)
-		r.Get("/newsletters/{newsletterId}", func(w http.ResponseWriter, r *http.Request) {
-			rawID := chi.URLParam(r, "newsletterId")
-			if err := validateUUID(rawID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.GetNewslettersNewsletterId(w, r, *utils.StringToUUIDPtr(rawID))
-		})
-		r.Put("/newsletters/{newsletterId}", func(w http.ResponseWriter, r *http.Request) {
-			rawID := chi.URLParam(r, "newsletterId")
-			if err := validateUUID(rawID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.PutNewslettersNewsletterId(w, r, *utils.StringToUUIDPtr(rawID))
-		})
-		r.Delete("/newsletters/{newsletterId}", func(w http.ResponseWriter, r *http.Request) {
-			rawID := chi.URLParam(r, "newsletterId")
-			if err := validateUUID(rawID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.DeleteNewslettersNewsletterId(w, r, *utils.StringToUUIDPtr(rawID))
-		})
-		
-		// Post management (editor-owned)
-		r.Get("/newsletters/{newsletterId}/posts", func(w http.ResponseWriter, r *http.Request) {
-			rawID := chi.URLParam(r, "newsletterId")
-			if err := validateUUID(rawID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.GetNewslettersNewsletterIdPosts(w, r, *utils.StringToUUIDPtr(rawID))
-		})
-		r.Post("/newsletters/{newsletterId}/posts", func(w http.ResponseWriter, r *http.Request) {
-			rawID := chi.URLParam(r, "newsletterId")
-			if err := validateUUID(rawID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.PostNewslettersNewsletterIdPosts(w, r, *utils.StringToUUIDPtr(rawID))
-		})
-		r.Get("/newsletters/{newsletterId}/scheduled-posts", func(w http.ResponseWriter, r *http.Request) {
-			rawID := chi.URLParam(r, "newsletterId")
-			if err := validateUUID(rawID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.GetNewslettersNewsletterIdScheduledPosts(w, r, *utils.StringToUUIDPtr(rawID))
-		})
-		r.Get("/newsletters/{newsletterId}/scheduled-posts/{postId}", func(w http.ResponseWriter, r *http.Request) {
-			newsletterID := chi.URLParam(r, "newsletterId")
-			postID := chi.URLParam(r, "postId")
-			if err := validateUUID(newsletterID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			if err := validateUUID(postID); err != nil {
-				http.Error(w, "Invalid post ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.GetNewslettersNewsletterIdScheduledPostsPostId(w, r, *utils.StringToUUIDPtr(newsletterID), *utils.StringToUUIDPtr(postID))
-		})
-		r.Put("/newsletters/{newsletterId}/scheduled-posts/{postId}", func(w http.ResponseWriter, r *http.Request) {
-			newsletterID := chi.URLParam(r, "newsletterId")
-			postID := chi.URLParam(r, "postId")
-			if err := validateUUID(newsletterID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			if err := validateUUID(postID); err != nil {
-				http.Error(w, "Invalid post ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.PutNewslettersNewsletterIdScheduledPostsPostId(w, r, *utils.StringToUUIDPtr(newsletterID), *utils.StringToUUIDPtr(postID))
-		})
-		r.Delete("/newsletters/{newsletterId}/scheduled-posts/{postId}", func(w http.ResponseWriter, r *http.Request) {
-			newsletterID := chi.URLParam(r, "newsletterId")
-			postID := chi.URLParam(r, "postId")
-			if err := validateUUID(newsletterID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			if err := validateUUID(postID); err != nil {
-				http.Error(w, "Invalid post ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.DeleteNewslettersNewsletterIdScheduledPostsPostId(w, r, *utils.StringToUUIDPtr(newsletterID), *utils.StringToUUIDPtr(postID))
+
+		r.Route("/newsletters/{newsletterId}", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			r.Get("/", apiServer.GetNewslettersNewsletterId)
+			r.Put("/", apiServer.PutNewslettersNewsletterId)
+			r.Delete("/", apiServer.DeleteNewslettersNewsletterId)
+
+			// Post management (editor-owned)
+			r.Route("/posts", func(r chi.Router) {
+				r.Get("/", apiServer.GetNewslettersNewsletterIdPosts)
+				r.Post("/", apiServer.PostNewslettersNewsletterIdPosts)
+			})
+
+			// Scheduled Post management (editor-owned)
+			r.Route("/scheduled-posts", func(r chi.Router) {
+				r.Get("/", apiServer.GetNewslettersNewsletterIdScheduledPosts)
+				r.Route("/{postId}", func(r chi.Router) {
+					r.Use(middleware.UUIDParamValidationMiddleware("postId"))
+					r.Get("/", apiServer.GetNewslettersNewsletterIdScheduledPostsPostId)
+					r.Put("/", apiServer.PutNewslettersNewsletterIdScheduledPostsPostId)
+					r.Delete("/", apiServer.DeleteNewslettersNewsletterIdScheduledPostsPostId)
+				})
+			})
 		})
 	})
 
@@ -245,56 +179,31 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 		r.Use(authMiddleware.RequireAdmin)
 		r.Get("/admin/users", apiServer.GetAdminUsers)
 		r.Get("/admin/newsletters", apiServer.GetAdminNewsletters)
-		// Wrap handlers to match chi router's expected function signature
-		r.Delete("/admin/newsletters/{newsletterId}", func(w http.ResponseWriter, r *http.Request) {
-			rawID := chi.URLParam(r, "newsletterId")
-			if err := validateUUID(rawID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.DeleteAdminNewslettersNewsletterId(w, r, *utils.StringToUUIDPtr(rawID))
-		})
-		r.Put("/admin/users/{userId}/grant-admin", func(w http.ResponseWriter, r *http.Request) {
-			rawID := chi.URLParam(r, "userId")
-			if err := validateUUID(rawID); err != nil {
-				http.Error(w, "Invalid user ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.PutAdminUsersUserIdGrantAdmin(w, r, *utils.StringToUUIDPtr(rawID))
-		})
-		r.Put("/admin/users/{userId}/revoke-admin", func(w http.ResponseWriter, r *http.Request) {
-			rawID := chi.URLParam(r, "userId")
-			if err := validateUUID(rawID); err != nil {
-				http.Error(w, "Invalid user ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.PutAdminUsersUserIdRevokeAdmin(w, r, *utils.StringToUUIDPtr(rawID))
-		})
+		r.With(middleware.UUIDParamValidationMiddleware("newsletterId")).Delete("/admin/newsletters/{newsletterId}", apiServer.DeleteAdminNewslettersNewsletterId)
+		r.With(middleware.UUIDParamValidationMiddleware("userId")).Delete("/admin/users/{userId}", apiServer.DeleteAdminUsersUserId)
 	})
 
-	// Public routes (no authentication required)
-	apiRouter.Group(func(r chi.Router) {
-		// Authentication documentation endpoints
+	// Public routes
+	publicRouter := chi.NewRouter()
+	publicRouter.Group(func(r chi.Router) {
+		// Auth
 		r.Post("/auth/signup", apiServer.PostAuthSignup)
 		r.Post("/auth/signin", apiServer.PostAuthSignin)
-		r.Post("/auth/password-reset-request", apiServer.PostAuthPasswordResetRequest)
-		
-		// Public subscription endpoints
-		r.Post("/newsletters/{newsletterId}/subscribe", func(w http.ResponseWriter, r *http.Request) {
-			rawID := chi.URLParam(r, "newsletterId")
-			if err := validateUUID(rawID); err != nil {
-				http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
-				return
-			}
-			apiServer.PostNewslettersNewsletterIdSubscribe(w, r, *utils.StringToUUIDPtr(rawID))
+		r.Post("/auth/password-reset", apiServer.PostAuthPasswordResetRequest)
+
+		// Newsletter Subscription
+		r.Route("/newsletters/{newsletterId}/subscribe", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			r.Post("/", apiServer.PostNewslettersNewsletterIdSubscribe)
 		})
-		r.Get("/subscribe/confirm/{confirmationToken}", func(w http.ResponseWriter, r *http.Request) {
-			token := chi.URLParam(r, "confirmationToken")
-			apiServer.GetSubscribeConfirmConfirmationToken(w, r, token)
+		r.Route("/newsletters/{newsletterId}/unsubscribe", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			r.Post("/", apiServer.PostNewslettersNewsletterIdUnsubscribe)
 		})
-		r.Get("/unsubscribe/{unsubscribeToken}", func(w http.ResponseWriter, r *http.Request) {
-			token := chi.URLParam(r, "unsubscribeToken")
-			apiServer.GetUnsubscribeUnsubscribeToken(w, r, token)
+		r.Route("/newsletters/{newsletterId}/confirm-subscription", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			// Assuming token is a query param, not a UUID path param here
+			r.Get("/", apiServer.GetNewslettersNewsletterIdConfirmSubscription)
 		})
 	})
 
@@ -302,14 +211,6 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 	r.Mount("/api/v1", apiRouter)
 
 	return r
-}
-
-// validateUUID checks if a string is a valid UUID
-func validateUUID(id string) error {
-	if _, err := uuid.Parse(id); err != nil {
-		return fmt.Errorf("invalid UUID format: %w", err)
-	}
-	return nil
 }
 
 // SlogMiddleware is a chi middleware for logging requests using slog.
