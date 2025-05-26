@@ -12,6 +12,7 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	Logging  LoggingConfig
+	Supabase SupabaseConfig
 }
 
 // ServerConfig holds server-related configuration
@@ -38,6 +39,13 @@ type LoggingConfig struct {
 	Level string
 }
 
+// SupabaseConfig holds Supabase-related configuration
+type SupabaseConfig struct {
+	ProjectURL string
+	AnonKey    string
+	JWTSecret  string
+}
+
 // Load loads configuration from environment variables
 func Load() *Config {
 	return &Config{
@@ -58,6 +66,11 @@ func Load() *Config {
 		},
 		Logging: LoggingConfig{
 			Level: utils.GetEnvWithDefault("LOG_LEVEL", "info"),
+		},
+		Supabase: SupabaseConfig{
+			ProjectURL: os.Getenv("SUPABASE_URL"),
+			AnonKey:    os.Getenv("SUPABASE_ANON_KEY"),
+			JWTSecret:  os.Getenv("SUPABASE_JWT_SECRET"),
 		},
 	}
 } 

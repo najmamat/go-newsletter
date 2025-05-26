@@ -16,61 +16,63 @@ import (
 // Server implements the generated ServerInterface
 type Server struct {
 	profileService *services.ProfileService
+	authService    *services.AuthService
 	logger         *slog.Logger
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, logger *slog.Logger) *Server {
+func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger) *Server {
 	return &Server{
 		profileService: profileService,
+		authService:    authService,
 		logger:         logger,
 	}
 }
 
+// GetAuthService returns the auth service instance
+func (s *Server) GetAuthService() *services.AuthService {
+	return s.authService
+}
+
 // GetMe implements the GET /me endpoint
 func (s *Server) GetMe(w http.ResponseWriter, r *http.Request) {
-	// For now, we'll use a dummy profile ID since we don't have auth yet
-	// TODO: Extract user ID from JWT token when auth is implemented
-	profiles, err := s.profileService.GetAllProfiles(r.Context())
+	// Get authenticated user from context
+	user, ok := services.GetUserFromContext(r.Context())
+	if !ok {
+		s.handleError(w, r, models.NewUnauthorizedError("User not authenticated"))
+		return
+	}
+
+	// Get the user's profile from database
+	profile, err := s.profileService.GetProfileByID(r.Context(), user.UserID.String())
 	if err != nil {
 		s.handleError(w, r, err)
 		return
 	}
 
-	if len(profiles) == 0 {
-		s.handleError(w, r, models.NewNotFoundError("No profiles found"))
-		return
-	}
-
-	// For demo purposes, return the first profile
-	profile := utils.ProfileToEditorProfile(profiles[0])
-	s.respondJSON(w, http.StatusOK, profile)
+	// Convert to API response format
+	editorProfile := utils.ProfileToEditorProfile(*profile)
+	s.respondJSON(w, http.StatusOK, editorProfile)
 }
 
 // PutMe implements the PUT /me endpoint
 func (s *Server) PutMe(w http.ResponseWriter, r *http.Request) {
+	// Get authenticated user from context
+	user, ok := services.GetUserFromContext(r.Context())
+	if !ok {
+		s.handleError(w, r, models.NewUnauthorizedError("User not authenticated"))
+		return
+	}
+
 	var req generated.PutMeJSONBody
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.handleError(w, r, models.NewBadRequestError("Invalid JSON payload"))
 		return
 	}
 
-	// For now, we'll use a dummy profile ID since we don't have auth yet
-	// TODO: Extract user ID from JWT token when auth is implemented
-	profiles, err := s.profileService.GetAllProfiles(r.Context())
-	if err != nil {
-		s.handleError(w, r, err)
-		return
-	}
-
-	if len(profiles) == 0 {
-		s.handleError(w, r, models.NewNotFoundError("No profiles found"))
-		return
-	}
-
-	// Convert and update the first profile for demo
+	// Convert and update the user's profile
 	updateReq := utils.UpdateProfileRequestToInternal(req)
-	updatedProfile, err := s.profileService.UpdateProfile(r.Context(), profiles[0].ID, updateReq)
+	updatedProfile, err := s.profileService.UpdateProfile(r.Context(), user.UserID.String(), updateReq)
 	if err != nil {
 		s.handleError(w, r, err)
 		return
@@ -114,15 +116,38 @@ func (s *Server) PutAdminUsersUserIdRevokeAdmin(w http.ResponseWriter, r *http.R
 }
 
 func (s *Server) PostAuthPasswordResetRequest(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	response := map[string]interface{}{
+		"message": "Password reset is handled by Supabase Auth on the frontend",
+		"instructions": map[string]interface{}{
+			"frontend": "Use supabase.auth.resetPasswordForEmail(email)",
+			"documentation": "https://supabase.com/docs/guides/auth/passwords#reset-a-password",
+		},
+	}
+	s.respondJSON(w, http.StatusOK, response)
 }
 
 func (s *Server) PostAuthSignin(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	response := map[string]interface{}{
+		"message": "Sign-in is handled by Supabase Auth on the frontend",
+		"instructions": map[string]interface{}{
+			"frontend": "Use supabase.auth.signInWithPassword({ email, password })",
+			"documentation": "https://supabase.com/docs/guides/auth/passwords#sign-in-with-password",
+			"note": "After successful sign-in, include the JWT token in the Authorization header for API requests",
+		},
+	}
+	s.respondJSON(w, http.StatusOK, response)
 }
 
 func (s *Server) PostAuthSignup(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	response := map[string]interface{}{
+		"message": "Sign-up is handled by Supabase Auth on the frontend",
+		"instructions": map[string]interface{}{
+			"frontend": "Use supabase.auth.signUp({ email, password })",
+			"documentation": "https://supabase.com/docs/guides/auth/passwords#sign-up-with-password",
+			"note": "A profile will be automatically created in the profiles table upon successful registration",
+		},
+	}
+	s.respondJSON(w, http.StatusOK, response)
 }
 
 func (s *Server) GetNewsletters(w http.ResponseWriter, r *http.Request) {

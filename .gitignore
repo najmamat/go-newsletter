@@ -48,3 +48,9 @@ Thumbs.db
 
 # Test coverage
 coverage.out
+
+# Test script generated files
+tests/.auth_token
+tests/.user_id
+tests/.test_newsletter_id
+tests/.test_post_id
