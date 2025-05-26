@@ -15,15 +15,17 @@ import (
 
 // Server implements the generated ServerInterface
 type Server struct {
-	profileService *services.ProfileService
-	logger         *slog.Logger
+	profileService    *services.ProfileService
+	newsletterService *services.NewsletterService
+	logger            *slog.Logger
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, logger *slog.Logger) *Server {
+func NewServer(profileService *services.ProfileService, newsletterService *services.NewsletterService, logger *slog.Logger) *Server {
 	return &Server{
-		profileService: profileService,
-		logger:         logger,
+		profileService:    profileService,
+		newsletterService: newsletterService,
+		logger:            logger,
 	}
 }
 
@@ -126,11 +128,35 @@ func (s *Server) PostAuthSignup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetNewsletters(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	newsletters, err := s.newsletterService.GetAllNewsletters(r.Context())
+	if err != nil {
+		s.handleError(w, r, err)
+		return
+	}
+	s.respondJSON(w, http.StatusOK, newsletters)
 }
 
 func (s *Server) PostNewsletters(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	var req models.NewsletterCreateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.handleError(w, r, models.NewBadRequestError("Invalid JSON payload"))
+		return
+	}
+
+	// TODO: Replace this with real auth once implemented
+	editorID := "test-editor-id"
+
+	createReq := models.NewsletterCreateRequest{
+		Name:        req.Name,
+		Description: req.Description,
+	}
+
+	newsletter, err := s.newsletterService.CreateNewsletter(r.Context(), editorID, createReq)
+	if err != nil {
+		s.handleError(w, r, err)
+		return
+	}
+	s.respondJSON(w, http.StatusCreated, newsletter)
 }
 
 func (s *Server) DeleteNewslettersNewsletterId(w http.ResponseWriter, r *http.Request, newsletterId openapi_types.UUID) {
@@ -189,7 +215,7 @@ func (s *Server) GetUnsubscribeUnsubscribeToken(w http.ResponseWriter, r *http.R
 func (s *Server) respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	
+
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		s.logger.Error("Failed to encode JSON response", "error", err)
 	}
@@ -221,4 +247,4 @@ func (s *Server) notImplemented(w http.ResponseWriter, r *http.Request) {
 		Message: "Endpoint not yet implemented",
 	}
 	s.respondJSON(w, http.StatusNotImplemented, errorResponse)
-} 
+}
