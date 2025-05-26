@@ -9,14 +9,15 @@ import (
 	"strings"
 	"time"
 
+	"go-newsletter/internal/config"
+	"go-newsletter/internal/middleware"
 	"go-newsletter/internal/repository"
 	"go-newsletter/internal/server"
 	"go-newsletter/internal/services"
 	"go-newsletter/internal/utils"
-	"go-newsletter/pkg/generated"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -44,10 +45,14 @@ func main() {
 	}
 	defer dbpool.Close()
 
+	// Load configuration
+	cfg := config.Load()
+
 	// Initialize dependencies using dependency injection
 	profileRepo := repository.NewProfileRepository(dbpool, logger)
 	profileService := services.NewProfileService(profileRepo, logger)
-	apiServer := server.NewServer(profileService, logger)
+	authService := services.NewAuthService(cfg.Supabase.JWTSecret, logger)
+	apiServer := server.NewServer(profileService, authService, logger)
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)
@@ -118,18 +123,92 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 	r := chi.NewRouter()
 
 	// Middleware
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
+	r.Use(chimiddleware.RequestID)
+	r.Use(chimiddleware.RealIP)
 	r.Use(SlogMiddleware(logger))
-	r.Use(middleware.Recoverer)
+	r.Use(chimiddleware.Recoverer)
 
 	// Health check route
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
 
-	// Mount the generated API routes
-	r.Mount("/api/v1", generated.HandlerFromMux(apiServer, chi.NewRouter()))
+	// Create API router with auth middleware
+	apiRouter := chi.NewRouter()
+	authMiddleware := middleware.NewAuthMiddleware(apiServer.GetAuthService(), logger)
+
+	// Protected routes (require authentication, any editor)
+	apiRouter.Group(func(r chi.Router) {
+		r.Use(authMiddleware.RequireAuth)
+		
+		// Profile management
+		r.Get("/me", apiServer.GetMe)
+		r.Put("/me", apiServer.PutMe)
+		
+		// Newsletter management (editor-owned)
+		r.Get("/newsletters", apiServer.GetNewsletters)
+		r.Post("/newsletters", apiServer.PostNewsletters)
+
+		r.Route("/newsletters/{newsletterId}", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			r.Get("/", apiServer.GetNewslettersNewsletterId)
+			r.Put("/", apiServer.PutNewslettersNewsletterId)
+			r.Delete("/", apiServer.DeleteNewslettersNewsletterId)
+
+			// Post management (editor-owned)
+			r.Route("/posts", func(r chi.Router) {
+				r.Get("/", apiServer.GetNewslettersNewsletterIdPosts)
+				r.Post("/", apiServer.PostNewslettersNewsletterIdPosts)
+			})
+
+			// Scheduled Post management (editor-owned)
+			r.Route("/scheduled-posts", func(r chi.Router) {
+				r.Get("/", apiServer.GetNewslettersNewsletterIdScheduledPosts)
+				r.Route("/{postId}", func(r chi.Router) {
+					r.Use(middleware.UUIDParamValidationMiddleware("postId"))
+					r.Get("/", apiServer.GetNewslettersNewsletterIdScheduledPostsPostId)
+					r.Put("/", apiServer.PutNewslettersNewsletterIdScheduledPostsPostId)
+					r.Delete("/", apiServer.DeleteNewslettersNewsletterIdScheduledPostsPostId)
+				})
+			})
+		})
+	})
+
+	// Admin routes
+	apiRouter.Group(func(r chi.Router) {
+		r.Use(authMiddleware.RequireAdmin)
+		r.Get("/admin/users", apiServer.GetAdminUsers)
+		r.Get("/admin/newsletters", apiServer.GetAdminNewsletters)
+		r.With(middleware.UUIDParamValidationMiddleware("newsletterId")).Delete("/admin/newsletters/{newsletterId}", apiServer.DeleteAdminNewslettersNewsletterId)
+		r.With(middleware.UUIDParamValidationMiddleware("userId")).Delete("/admin/users/{userId}", apiServer.DeleteAdminUsersUserId)
+	})
+
+	// Public routes
+	publicRouter := chi.NewRouter()
+	publicRouter.Group(func(r chi.Router) {
+		// Auth
+		r.Post("/auth/signup", apiServer.PostAuthSignup)
+		r.Post("/auth/signin", apiServer.PostAuthSignin)
+		r.Post("/auth/password-reset", apiServer.PostAuthPasswordResetRequest)
+
+		// Newsletter Subscription
+		r.Route("/newsletters/{newsletterId}/subscribe", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			r.Post("/", apiServer.PostNewslettersNewsletterIdSubscribe)
+		})
+		r.Route("/newsletters/{newsletterId}/unsubscribe", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			r.Post("/", apiServer.PostNewslettersNewsletterIdUnsubscribe)
+		})
+		r.Route("/newsletters/{newsletterId}/confirm-subscription", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			// Assuming token is a query param, not a UUID path param here
+			r.Get("/", apiServer.GetNewslettersNewsletterIdConfirmSubscription)
+		})
+	})
+
+	// Mount the API router
+	r.Mount("/api/v1", apiRouter)
 
 	return r
 }
@@ -139,7 +218,7 @@ func SlogMiddleware(logger *slog.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tstart := time.Now()
-			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+			ww := chimiddleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
 			defer func() {
 				logger.Info("Served request",
@@ -148,7 +227,7 @@ func SlogMiddleware(logger *slog.Logger) func(next http.Handler) http.Handler {
 					"status", ww.Status(),
 					"latency_ms", time.Since(tstart).Milliseconds(),
 					"bytes_out", ww.BytesWritten(),
-					"request_id", middleware.GetReqID(r.Context()),
+					"request_id", chimiddleware.GetReqID(r.Context()),
 					"remote_ip", r.RemoteAddr,
 					"user_agent", r.UserAgent(),
 				)
