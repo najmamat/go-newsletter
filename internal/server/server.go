@@ -14,17 +14,24 @@ import (
 
 // Server implements the generated ServerInterface
 type Server struct {
-	profileService *services.ProfileService
-	authService    *services.AuthService
-	logger         *slog.Logger
+	profileService    *services.ProfileService
+	authService       *services.AuthService
+	newsletterService *services.NewsletterService
+	logger            *slog.Logger
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger) *Server {
+func NewServer(
+	profileService *services.ProfileService,
+	authService *services.AuthService,
+	newsletterService *services.NewsletterService,
+	logger *slog.Logger,
+) *Server {
 	return &Server{
-		profileService: profileService,
-		authService:    authService,
-		logger:         logger,
+		profileService:    profileService,
+		authService:       authService,
+		newsletterService: newsletterService,
+		logger:            logger,
 	}
 }
 
@@ -146,7 +153,7 @@ func (s *Server) PostAuthPasswordResetRequest(w http.ResponseWriter, r *http.Req
 	response := map[string]interface{}{
 		"message": "Password reset is handled by Supabase Auth on the frontend",
 		"instructions": map[string]interface{}{
-			"frontend": "Use supabase.auth.resetPasswordForEmail(email)",
+			"frontend":      "Use supabase.auth.resetPasswordForEmail(email)",
 			"documentation": "https://supabase.com/docs/guides/auth/passwords#reset-a-password",
 		},
 	}
@@ -157,9 +164,9 @@ func (s *Server) PostAuthSignin(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"message": "Sign-in is handled by Supabase Auth on the frontend",
 		"instructions": map[string]interface{}{
-			"frontend": "Use supabase.auth.signInWithPassword({ email, password })",
+			"frontend":      "Use supabase.auth.signInWithPassword({ email, password })",
 			"documentation": "https://supabase.com/docs/guides/auth/passwords#sign-in-with-password",
-			"note": "After successful sign-in, include the JWT token in the Authorization header for API requests",
+			"note":          "After successful sign-in, include the JWT token in the Authorization header for API requests",
 		},
 	}
 	s.respondJSON(w, http.StatusOK, response)
@@ -169,20 +176,45 @@ func (s *Server) PostAuthSignup(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"message": "Sign-up is handled by Supabase Auth on the frontend",
 		"instructions": map[string]interface{}{
-			"frontend": "Use supabase.auth.signUp({ email, password })",
+			"frontend":      "Use supabase.auth.signUp({ email, password })",
 			"documentation": "https://supabase.com/docs/guides/auth/passwords#sign-up-with-password",
-			"note": "A profile will be automatically created in the profiles table upon successful registration",
+			"note":          "A profile will be automatically created in the profiles table upon successful registration",
 		},
 	}
 	s.respondJSON(w, http.StatusOK, response)
 }
 
 func (s *Server) GetNewsletters(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	newsletters, err := s.newsletterService.GetAllNewsletters(r.Context())
+	if err != nil {
+		s.handleError(w, r, err)
+		return
+	}
+	s.respondJSON(w, http.StatusOK, newsletters)
 }
 
 func (s *Server) PostNewsletters(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	var req generated.NewsletterCreate
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.handleError(w, r, models.NewBadRequestError("Invalid JSON payload"))
+		return
+	}
+
+	// TODO: Replace this with real auth once implemented
+	editorID := "test-editor-id"
+
+	createReq := generated.NewsletterCreate{
+		Name:        req.Name,
+		Description: req.Description,
+	}
+
+	newsletter, err := s.newsletterService.CreateNewsletter(r.Context(), editorID, createReq)
+	if err != nil {
+		s.handleError(w, r, err)
+		return
+	}
+	s.respondJSON(w, http.StatusCreated, newsletter)
+
 }
 
 func (s *Server) DeleteNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
@@ -342,7 +374,7 @@ func (s *Server) GetUnsubscribeUnsubscribeToken(w http.ResponseWriter, r *http.R
 func (s *Server) respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	
+
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		s.logger.Error("Failed to encode JSON response", "error", err)
 	}
@@ -374,4 +406,4 @@ func (s *Server) notImplemented(w http.ResponseWriter, r *http.Request) {
 		Message: "Endpoint not yet implemented",
 	}
 	s.respondJSON(w, http.StatusNotImplemented, errorResponse)
-} 
+}

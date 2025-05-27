@@ -49,10 +49,17 @@ func main() {
 	cfg := config.Load()
 
 	// Initialize dependencies using dependency injection
+	// Profile
 	profileRepo := repository.NewProfileRepository(dbpool, logger)
 	profileService := services.NewProfileService(profileRepo, logger)
+
+	// Newsletter
+	newsletterRepo := repository.NewNewsletterRepository(dbpool, logger)
+	newsletterService := services.NewNewsletterService(newsletterRepo, logger)
+
+	// Rest
 	authService := services.NewAuthService(cfg.Supabase.JWTSecret, logger)
-	apiServer := server.NewServer(profileService, authService, logger)
+	apiServer := server.NewServer(profileService, authService, newsletterService, logger)
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)
@@ -83,7 +90,7 @@ func initializeDatabase(logger *slog.Logger) (*pgxpool.Pool, error) {
 			connStr = append(connStr, fmt.Sprintf("%s=%s", k, v))
 		}
 	}
-	
+
 	databaseURL := strings.Join(connStr, " ")
 	if databaseURL == "" {
 		return nil, fmt.Errorf("database connection parameters are not set properly")
@@ -140,11 +147,11 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 	// Protected routes (require authentication, any editor)
 	apiRouter.Group(func(r chi.Router) {
 		r.Use(authMiddleware.RequireAuth)
-		
+
 		// Profile management
 		r.Get("/me", apiServer.GetMe)
 		r.Put("/me", apiServer.PutMe)
-		
+
 		// Newsletter management (editor-owned)
 		r.Get("/newsletters", apiServer.GetNewsletters)
 		r.Post("/newsletters", apiServer.PostNewsletters)
@@ -236,4 +243,4 @@ func SlogMiddleware(logger *slog.Logger) func(next http.Handler) http.Handler {
 			next.ServeHTTP(ww, r)
 		})
 	}
-} 
+}
