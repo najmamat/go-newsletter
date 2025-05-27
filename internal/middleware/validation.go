@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go-newsletter/pkg/generated"
 	"net/http"
-
-	"go-newsletter/internal/models"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -27,7 +26,10 @@ func UUIDParamValidationMiddleware(paramName string) func(next http.Handler) htt
 			if err != nil {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest)
-				apiErr := models.NewBadRequestError(fmt.Sprintf("Invalid %s: %s", paramName, err.Error()))
+				apiErr := generated.Error{
+					Code:    http.StatusBadRequest,
+					Message: fmt.Sprintf("Invalid %s: %s", paramName, err.Error()),
+				}
 				response := map[string]interface{}{
 					"error": map[string]interface{}{
 						"code":    apiErr.Code,

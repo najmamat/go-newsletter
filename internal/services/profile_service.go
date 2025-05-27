@@ -7,6 +7,7 @@ import (
 
 	"go-newsletter/internal/models"
 	"go-newsletter/internal/repository"
+	"go-newsletter/pkg/generated"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -26,7 +27,7 @@ func NewProfileService(repo *repository.ProfileRepository, logger *slog.Logger) 
 }
 
 // GetAllProfiles retrieves all profiles
-func (s *ProfileService) GetAllProfiles(ctx context.Context) ([]models.Profile, error) {
+func (s *ProfileService) GetAllProfiles(ctx context.Context) ([]generated.EditorProfile, error) {
 	profiles, err := s.repo.GetAll(ctx)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "Failed to get all profiles", "error", err)
@@ -36,7 +37,7 @@ func (s *ProfileService) GetAllProfiles(ctx context.Context) ([]models.Profile, 
 }
 
 // GetProfileByID retrieves a profile by ID
-func (s *ProfileService) GetProfileByID(ctx context.Context, id string) (*models.Profile, error) {
+func (s *ProfileService) GetProfileByID(ctx context.Context, id string) (*generated.EditorProfile, error) {
 	if id == "" {
 		return nil, models.NewBadRequestError("Profile ID is required")
 	}
@@ -54,7 +55,7 @@ func (s *ProfileService) GetProfileByID(ctx context.Context, id string) (*models
 }
 
 // UpdateProfile updates a profile
-func (s *ProfileService) UpdateProfile(ctx context.Context, id string, req models.UpdateProfileRequest) (*models.Profile, error) {
+func (s *ProfileService) UpdateProfile(ctx context.Context, id string, req generated.PutMeJSONBody) (*generated.EditorProfile, error) {
 	if id == "" {
 		return nil, models.NewBadRequestError("Profile ID is required")
 	}
