@@ -38,7 +38,7 @@ dev: ## Run in development mode with auto-reload
 	@if command -v air > /dev/null 2>&1; then \
 		air; \
 	else \
-		echo "Air not installed. Install with: go install github.com/cosmtrek/air@latest"; \
+		echo "Air not installed. Install with: go install github.com/air-verse/air@latest"; \
 		echo "Running with go run instead..."; \
 		go run ./cmd/server; \
 	fi
@@ -46,8 +46,9 @@ dev: ## Run in development mode with auto-reload
 # Install development dependencies
 dev-deps: ## Install development dependencies
 	@echo "Installing development dependencies..."
-	go install github.com/cosmtrek/air@latest
+	go install github.com/air-verse/air@latest
 	go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+	go install github.com/go-delve/delve/cmd/dlv@master
 
 # Format code
 fmt: ## Format Go code
