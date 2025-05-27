@@ -1,10 +1,10 @@
 # Dockerfile
 
 # ---- Build Stage ----
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23.3-alpine AS builder
 
 # Set the Current Working Directory inside the container
-WORKDIR /app
+WORKDIR /build
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./
@@ -26,7 +26,7 @@ FROM alpine:latest
 # Security non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-WORKDIR /app
+WORKDIR /build
 
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /go-newsletter /app/go-newsletter
