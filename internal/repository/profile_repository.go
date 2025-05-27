@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"go-newsletter/internal/models"
+	"go-newsletter/pkg/generated"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -24,7 +24,7 @@ func NewProfileRepository(db *pgxpool.Pool, logger *slog.Logger) *ProfileReposit
 }
 
 // GetAll retrieves all profiles from the database
-func (r *ProfileRepository) GetAll(ctx context.Context) ([]models.Profile, error) {
+func (r *ProfileRepository) GetAll(ctx context.Context) ([]generated.EditorProfile, error) {
 	query := `
 		SELECT id, full_name, avatar_url, is_admin, created_at, updated_at 
 		FROM public.profiles 
@@ -38,10 +38,10 @@ func (r *ProfileRepository) GetAll(ctx context.Context) ([]models.Profile, error
 	}
 	defer rows.Close()
 
-	var profiles []models.Profile
+	var profiles []generated.EditorProfile
 	for rows.Next() {
-		var p models.Profile
-		if err := rows.Scan(&p.ID, &p.FullName, &p.AvatarURL, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		var p generated.EditorProfile
+		if err := rows.Scan(&p.Id, &p.FullName, &p.AvatarUrl, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			r.logger.ErrorContext(ctx, "Failed to scan profile row", "error", err)
 			return nil, err
 		}
@@ -57,16 +57,16 @@ func (r *ProfileRepository) GetAll(ctx context.Context) ([]models.Profile, error
 }
 
 // GetByID retrieves a single profile by ID
-func (r *ProfileRepository) GetByID(ctx context.Context, id string) (*models.Profile, error) {
+func (r *ProfileRepository) GetByID(ctx context.Context, id string) (*generated.EditorProfile, error) {
 	query := `
 		SELECT id, full_name, avatar_url, is_admin, created_at, updated_at 
 		FROM public.profiles 
 		WHERE id = $1
 	`
 
-	var p models.Profile
+	var p generated.EditorProfile
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&p.ID, &p.FullName, &p.AvatarURL, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt,
+		&p.Id, &p.FullName, &p.AvatarUrl, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "Failed to get profile by ID", "id", id, "error", err)
@@ -77,7 +77,7 @@ func (r *ProfileRepository) GetByID(ctx context.Context, id string) (*models.Pro
 }
 
 // Update updates a profile's editable fields
-func (r *ProfileRepository) Update(ctx context.Context, id string, req models.UpdateProfileRequest) (*models.Profile, error) {
+func (r *ProfileRepository) Update(ctx context.Context, id string, req generated.PutMeJSONBody) (*generated.EditorProfile, error) {
 	query := `
 		UPDATE public.profiles 
 		SET full_name = $2, avatar_url = $3, updated_at = NOW()
@@ -85,9 +85,9 @@ func (r *ProfileRepository) Update(ctx context.Context, id string, req models.Up
 		RETURNING id, full_name, avatar_url, is_admin, created_at, updated_at
 	`
 
-	var p models.Profile
-	err := r.db.QueryRow(ctx, query, id, req.FullName, req.AvatarURL).Scan(
-		&p.ID, &p.FullName, &p.AvatarURL, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt,
+	var p generated.EditorProfile
+	err := r.db.QueryRow(ctx, query, id, req.FullName, req.AvatarUrl).Scan(
+		&p.Id, &p.FullName, &p.AvatarUrl, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "Failed to update profile", "id", id, "error", err)

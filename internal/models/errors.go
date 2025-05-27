@@ -1,12 +1,11 @@
 package models
 
-// APIError represents a standardized API error response
+
 type APIError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
 
-// Error implements the error interface
 func (e APIError) Error() string {
 	return e.Message
 }

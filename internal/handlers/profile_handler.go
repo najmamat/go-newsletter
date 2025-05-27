@@ -84,7 +84,7 @@ func (h *ProfileHandler) GetProfileByID(w http.ResponseWriter, r *http.Request) 
 func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	
-	var req models.UpdateProfileRequest
+	var req generated.PutMeJSONBody
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid JSON payload"))
 		return
