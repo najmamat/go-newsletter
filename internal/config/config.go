@@ -6,7 +6,6 @@ import (
 
 	"go-newsletter/internal/utils"
 
-	"github.com/joho/godotenv"
 )
 
 // Config holds all configuration for the application
@@ -56,8 +55,6 @@ type SupabaseConfig struct {
 
 // Load loads configuration from environment variables
 func Load() *Config {
-	// Load .env file if it exists
-	godotenv.Load()
 
 	return &Config{
 		Server: ServerConfig{
