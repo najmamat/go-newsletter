@@ -59,12 +59,12 @@ func (s *Server) GetAdminUsers(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) PutAdminUsersUserIdGrantAdmin(w http.ResponseWriter, r *http.Request) {
 
-	s.notImplemented(w, r)
+	s.profileHandler.GrantAdmin(w, r)
 }
 
 func (s *Server) PutAdminUsersUserIdRevokeAdmin(w http.ResponseWriter, r *http.Request) {
 
-	s.notImplemented(w, r)
+	s.profileHandler.RevokeAdmin(w, r)
 }
 
 func (s *Server) DeleteAdminUsersUserId(w http.ResponseWriter, r *http.Request) {

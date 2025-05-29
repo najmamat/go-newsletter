@@ -115,4 +115,46 @@ func (r *ProfileRepository) Create(ctx context.Context, id string) (*generated.E
 	}
 
 	return &p, nil
+}
+
+// GrantAdmin grants admin privileges to a user
+func (r *ProfileRepository) GrantAdmin(ctx context.Context, id string) (*generated.EditorProfile, error) {
+	query := `
+		UPDATE public.profiles 
+		SET is_admin = true, updated_at = NOW()
+		WHERE id = $1
+		RETURNING id, full_name, avatar_url, is_admin, created_at, updated_at
+	`
+
+	var p generated.EditorProfile
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&p.Id, &p.FullName, &p.AvatarUrl, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt,
+	)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to grant admin privileges", "id", id, "error", err)
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+// RevokeAdmin revokes admin privileges from a user
+func (r *ProfileRepository) RevokeAdmin(ctx context.Context, id string) (*generated.EditorProfile, error) {
+	query := `
+		UPDATE public.profiles 
+		SET is_admin = false, updated_at = NOW()
+		WHERE id = $1
+		RETURNING id, full_name, avatar_url, is_admin, created_at, updated_at
+	`
+
+	var p generated.EditorProfile
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&p.Id, &p.FullName, &p.AvatarUrl, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt,
+	)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to revoke admin privileges", "id", id, "error", err)
+		return nil, err
+	}
+
+	return &p, nil
 } 

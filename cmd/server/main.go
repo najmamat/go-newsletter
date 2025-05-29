@@ -205,6 +205,8 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 		r.Get("/admin/newsletters", apiServer.GetAdminNewsletters)
 		r.With(middleware.UUIDParamValidationMiddleware("newsletterId")).Delete("/admin/newsletters/{newsletterId}", apiServer.DeleteAdminNewslettersNewsletterId)
 		r.With(middleware.UUIDParamValidationMiddleware("userId")).Delete("/admin/users/{userId}", apiServer.DeleteAdminUsersUserId)
+		r.With(middleware.UUIDParamValidationMiddleware("userId")).Put("/admin/users/{userId}/grant-admin", apiServer.PutAdminUsersUserIdGrantAdmin)
+		r.With(middleware.UUIDParamValidationMiddleware("userId")).Put("/admin/users/{userId}/revoke-admin", apiServer.PutAdminUsersUserIdRevokeAdmin)
 	})
 
 	// Mount the API router
