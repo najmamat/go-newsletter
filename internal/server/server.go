@@ -15,16 +15,18 @@ type Server struct {
 	profileHandler *handlers.ProfileHandler
 	authHandler    *handlers.AuthHandler
 	authService    *services.AuthService
+	mailingService *services.MailingService
 	responder      *utils.HTTPResponder
 	logger         *slog.Logger // Keep logger for non-HTTP operations
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger) *Server {
+func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger, mailingService *services.MailingService) *Server {
 	return &Server{
 		profileHandler: handlers.NewProfileHandler(profileService, authService, logger),
 		authHandler:    handlers.NewAuthHandler(authService, logger),
 		authService:    authService,
+		mailingService: mailingService,
 		responder:      utils.NewHTTPResponder(logger),
 		logger:         logger,
 	}
@@ -120,7 +122,7 @@ func (s *Server) GetNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseW
 	s.notImplemented(w, r)
 }
 
-func (s *Server) PutNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {	
+func (s *Server) PutNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
 	s.notImplemented(w, r)
 }
 
@@ -132,7 +134,7 @@ func (s *Server) PostNewslettersNewsletterIdUnsubscribe(w http.ResponseWriter, r
 	s.notImplemented(w, r)
 }
 
-func (s *Server) GetNewslettersNewsletterIdConfirmSubscription(w http.ResponseWriter, r *http.Request) {	
+func (s *Server) GetNewslettersNewsletterIdConfirmSubscription(w http.ResponseWriter, r *http.Request) {
 	s.notImplemented(w, r)
 }
 
@@ -154,4 +156,4 @@ func (s *Server) notImplemented(w http.ResponseWriter, r *http.Request) {
 		Message: "Endpoint not yet implemented",
 	}
 	s.responder.RespondJSON(w, http.StatusNotImplemented, errorResponse)
-} 
+}

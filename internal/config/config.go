@@ -13,6 +13,7 @@ type Config struct {
 	Database DatabaseConfig
 	Logging  LoggingConfig
 	Supabase SupabaseConfig
+	Resend   ResendConfig
 }
 
 // ServerConfig holds server-related configuration
@@ -32,6 +33,11 @@ type DatabaseConfig struct {
 	SSLMode  string
 	MaxConns int32
 	MinConns int32
+}
+
+type ResendConfig struct {
+	Sender string
+	ApiKey string
 }
 
 // LoggingConfig holds logging-related configuration
@@ -72,5 +78,9 @@ func Load() *Config {
 			AnonKey:    os.Getenv("SUPABASE_ANON_KEY"),
 			JWTSecret:  os.Getenv("SUPABASE_JWT_SECRET"),
 		},
+		Resend: ResendConfig{
+			Sender: os.Getenv("RESEND_SENDER"),
+			ApiKey: os.Getenv("RESEND_API_KEY"),
+		},
 	}
-} 
+}
