@@ -27,21 +27,21 @@ func NewProfileService(repo *repository.ProfileRepository, logger *slog.Logger) 
 }
 
 // GetAllProfiles retrieves all profiles
-func (s *ProfileService) GetAllProfiles(ctx context.Context) ([]models.Profile, error) {
+func (s *ProfileService) GetAllProfiles(ctx context.Context) ([]generated.EditorProfile, error) {
 	profiles, err := s.repo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []models.Profile
+	var result []generated.EditorProfile
 	for _, p := range profiles {
-		result = append(result, utils.EditorProfileToProfile(p))
+		result = append(result, utils.ProfileToEditorProfile(p))
 	}
 	return result, nil
 }
 
 // GetProfileByID retrieves a profile by ID
-func (s *ProfileService) GetProfileByID(ctx context.Context, id string) (*models.Profile, error) {
+func (s *ProfileService) GetProfileByID(ctx context.Context, id string) (*generated.EditorProfile, error) {
 	profile, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -49,12 +49,12 @@ func (s *ProfileService) GetProfileByID(ctx context.Context, id string) (*models
 		}
 		return nil, err
 	}
-	result := utils.EditorProfileToProfile(*profile)
+	result := utils.ProfileToEditorProfile(*profile)
 	return &result, nil
 }
 
 // UpdateProfile updates a profile
-func (s *ProfileService) UpdateProfile(ctx context.Context, id string, req generated.PutMeJSONBody) (*models.Profile, error) {
+func (s *ProfileService) UpdateProfile(ctx context.Context, id string, req generated.PutMeJSONBody) (*generated.EditorProfile, error) {
 	// Check if profile exists
 	_, err := s.repo.GetByID(ctx, id)
 	if err != nil {
@@ -70,12 +70,12 @@ func (s *ProfileService) UpdateProfile(ctx context.Context, id string, req gener
 		return nil, err
 	}
 
-	result := utils.EditorProfileToProfile(*updatedProfile)
+	result := utils.ProfileToEditorProfile(*updatedProfile)
 	return &result, nil
 }
 
 // GrantAdmin grants admin privileges to a user
-func (s *ProfileService) GrantAdmin(ctx context.Context, id string) (*models.Profile, error) {
+func (s *ProfileService) GrantAdmin(ctx context.Context, id string) (*generated.EditorProfile, error) {
 	// Check if profile exists
 	_, err := s.repo.GetByID(ctx, id)
 	if err != nil {
@@ -89,12 +89,12 @@ func (s *ProfileService) GrantAdmin(ctx context.Context, id string) (*models.Pro
 	if err != nil {
 		return nil, err
 	}
-	result := utils.EditorProfileToProfile(*profile)
+	result := utils.ProfileToEditorProfile(*profile)
 	return &result, nil
 }
 
 // RevokeAdmin revokes admin privileges from a user
-func (s *ProfileService) RevokeAdmin(ctx context.Context, id string) (*models.Profile, error) {
+func (s *ProfileService) RevokeAdmin(ctx context.Context, id string) (*generated.EditorProfile, error) {
 	// Check if profile exists
 	_, err := s.repo.GetByID(ctx, id)
 	if err != nil {
@@ -108,6 +108,6 @@ func (s *ProfileService) RevokeAdmin(ctx context.Context, id string) (*models.Pr
 	if err != nil {
 		return nil, err
 	}
-	result := utils.EditorProfileToProfile(*profile)
+	result := utils.ProfileToEditorProfile(*profile)
 	return &result, nil
 } 

@@ -46,7 +46,7 @@ func (h *ProfileHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert to API response format
-	editorProfile := utils.InternalProfileToEditorProfile(profile)
+	editorProfile := utils.ProfileToEditorProfile(*profile)
 	h.responder.RespondJSON(w, http.StatusOK, editorProfile)
 }
 
@@ -61,7 +61,7 @@ func (h *ProfileHandler) GetAllProfiles(w http.ResponseWriter, r *http.Request) 
 	var editorProfiles []generated.EditorProfile
 	for _, profile := range profiles {
 		profileCopy := profile // Create a copy to avoid modifying the loop variable
-		editorProfiles = append(editorProfiles, utils.InternalProfileToEditorProfile(&profileCopy))
+		editorProfiles = append(editorProfiles, utils.ProfileToEditorProfile(profileCopy))
 	}
 
 	h.responder.RespondJSON(w, http.StatusOK, editorProfiles)
@@ -77,7 +77,7 @@ func (h *ProfileHandler) GetProfileByID(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	editorProfile := utils.InternalProfileToEditorProfile(profile)
+	editorProfile := utils.ProfileToEditorProfile(*profile)
 	h.responder.RespondJSON(w, http.StatusOK, editorProfile)
 }
 
@@ -97,7 +97,7 @@ func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	editorProfile := utils.InternalProfileToEditorProfile(profile)
+	editorProfile := utils.ProfileToEditorProfile(*profile)
 	h.responder.RespondJSON(w, http.StatusOK, editorProfile)
 }
 
@@ -124,7 +124,7 @@ func (h *ProfileHandler) PutMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profile := utils.InternalProfileToEditorProfile(updatedProfile)
+	profile := utils.ProfileToEditorProfile(*updatedProfile)
 	h.responder.RespondJSON(w, http.StatusOK, profile)
 }
 
@@ -143,7 +143,7 @@ func (h *ProfileHandler) GrantAdmin(w http.ResponseWriter, r *http.Request) {
 		h.responder.HandleError(w, r, err)
 		return
 	}
-	if !profile.IsAdmin {
+	if profile.IsAdmin == nil || !*profile.IsAdmin {
 		h.responder.HandleError(w, r, models.NewForbiddenError("Admin privileges required"))
 		return
 	}
@@ -162,7 +162,7 @@ func (h *ProfileHandler) GrantAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.responder.RespondJSON(w, http.StatusOK, utils.InternalProfileToEditorProfile(updatedProfile))
+	h.responder.RespondJSON(w, http.StatusOK, utils.ProfileToEditorProfile(*updatedProfile))
 }
 
 // RevokeAdmin handles PUT /admin/users/{userId}/revoke-admin endpoint
@@ -180,7 +180,7 @@ func (h *ProfileHandler) RevokeAdmin(w http.ResponseWriter, r *http.Request) {
 		h.responder.HandleError(w, r, err)
 		return
 	}
-	if !profile.IsAdmin {
+	if profile.IsAdmin == nil || !*profile.IsAdmin {
 		h.responder.HandleError(w, r, models.NewForbiddenError("Admin privileges required"))
 		return
 	}
@@ -199,5 +199,5 @@ func (h *ProfileHandler) RevokeAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.responder.RespondJSON(w, http.StatusOK, utils.InternalProfileToEditorProfile(updatedProfile))
+	h.responder.RespondJSON(w, http.StatusOK, utils.ProfileToEditorProfile(*updatedProfile))
 } 
