@@ -50,7 +50,7 @@ type LoggingConfig struct {
 // SupabaseConfig holds Supabase-related configuration
 type SupabaseConfig struct {
 	URL         string
-	ServiceKey  string
+	AnonKey  string
 	JWTSecret   string
 }
 
@@ -80,7 +80,7 @@ func Load() *Config {
 		},
 		Supabase: SupabaseConfig{
 			URL:         os.Getenv("SUPABASE_URL"),
-			ServiceKey:  os.Getenv("SUPABASE_ANON_KEY"),
+			AnonKey:  os.Getenv("SUPABASE_ANON_KEY"),
 			JWTSecret:   os.Getenv("SUPABASE_JWT_SECRET"),
 		},
 		Resend: ResendConfig{

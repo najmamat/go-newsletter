@@ -25,7 +25,7 @@ type Server struct {
 func NewServer(profileService *services.ProfileService, authService *services.AuthService, cfg *config.Config, logger *slog.Logger, mailingService *services.MailingService) *Server {
 	return &Server{
 		profileHandler: handlers.NewProfileHandler(profileService, authService, logger),
-		authHandler:    handlers.NewAuthHandler(authService, cfg.Supabase.URL, cfg.Supabase.ServiceKey, logger),
+		authHandler:    handlers.NewAuthHandler(authService, logger),
 		authService:    authService,
 		mailingService: mailingService,
 		responder:      utils.NewHTTPResponder(logger),
