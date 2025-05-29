@@ -52,7 +52,8 @@ func main() {
 	profileRepo := repository.NewProfileRepository(dbpool, logger)
 	profileService := services.NewProfileService(profileRepo, logger)
 	authService := services.NewAuthService(cfg.Supabase.JWTSecret, logger)
-	apiServer := server.NewServer(profileService, authService, logger)
+	mailingService := services.NewMailingService(&cfg.Resend, logger)
+	apiServer := server.NewServer(profileService, authService, logger, mailingService)
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)
@@ -83,29 +84,29 @@ func initializeDatabase(logger *slog.Logger) (*pgxpool.Pool, error) {
 			connStr = append(connStr, fmt.Sprintf("%s=%s", k, v))
 		}
 	}
-	
+
 	databaseURL := strings.Join(connStr, " ")
 	if databaseURL == "" {
 		return nil, fmt.Errorf("database connection parameters are not set properly")
 	}
 
 	// Parse config and configure connection pool
-	config, err := pgxpool.ParseConfig(databaseURL)
+	parsedConfig, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse database config: %w", err)
 	}
 
 	// Configure connection pool settings
-	config.MaxConns = 10
-	config.MinConns = 2
-	config.MaxConnLifetime = time.Hour
-	config.MaxConnIdleTime = time.Minute * 30
+	parsedConfig.MaxConns = 10
+	parsedConfig.MinConns = 2
+	parsedConfig.MaxConnLifetime = time.Hour
+	parsedConfig.MaxConnIdleTime = time.Minute * 30
 
 	// Disable automatic prepared statement caching to avoid conflicts
-	config.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeExec
+	parsedConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeExec
 
 	// Initialize connection pool
-	dbpool, err := pgxpool.NewWithConfig(context.Background(), config)
+	dbpool, err := pgxpool.NewWithConfig(context.Background(), parsedConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
@@ -140,11 +141,11 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 	// Protected routes (require authentication, any editor)
 	apiRouter.Group(func(r chi.Router) {
 		r.Use(authMiddleware.RequireAuth)
-		
+
 		// Profile management
 		r.Get("/me", apiServer.GetMe)
 		r.Put("/me", apiServer.PutMe)
-		
+
 		// Newsletter management (editor-owned)
 		r.Get("/newsletters", apiServer.GetNewsletters)
 		r.Post("/newsletters", apiServer.PostNewsletters)
@@ -236,4 +237,4 @@ func SlogMiddleware(logger *slog.Logger) func(next http.Handler) http.Handler {
 			next.ServeHTTP(ww, r)
 		})
 	}
-} 
+}
