@@ -25,18 +25,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AuthCredentials"
+              $ref: '#/components/schemas/AuthCredentials'
       responses:
-        "200": # Supabase client might return user object or session upon successful signup
+        '200': # Supabase client might return user object or session upon successful signup
           description: Signup successful, session returned (or user object)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /auth/signin:
     post:
@@ -49,20 +49,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AuthCredentials"
+              $ref: '#/components/schemas/AuthCredentials'
       responses:
-        "200":
+        '200':
           description: Authentication successful
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /auth/password-reset-request:
     post:
@@ -75,14 +75,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PasswordResetRequest"
+              $ref: '#/components/schemas/PasswordResetRequest'
       responses:
-        "200":
+        '200':
           description: Password reset email sent (or instruction provided).
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # Note: Actual password reset via link is typically handled by Supabase UI/flow
 
@@ -94,16 +94,16 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Current editor's profile
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EditorProfile"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/EditorProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     put:
       summary: Update Current Editor Profile
       tags:
@@ -124,18 +124,18 @@ paths:
                   format: url
                   nullable: true
       responses:
-        "200":
+        '200':
           description: Profile updated successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EditorProfile"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/EditorProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /newsletters:
     get:
@@ -146,18 +146,18 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: A list of newsletters.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Newsletter"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                  $ref: '#/components/schemas/Newsletter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       summary: Create Newsletter
       description: Creates a new newsletter for the authenticated editor.
@@ -170,20 +170,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NewsletterCreate"
+              $ref: '#/components/schemas/NewsletterCreate'
       responses:
-        "201":
+        '201':
           description: Newsletter created successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Newsletter"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/Newsletter'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /newsletters/{newsletterId}:
     parameters:
@@ -202,20 +202,20 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Newsletter details.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Newsletter"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/Newsletter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     put:
       summary: Update Newsletter
       description: Updates details of a specific newsletter. Requires editor ownership.
@@ -228,24 +228,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NewsletterUpdate"
+              $ref: '#/components/schemas/NewsletterUpdate'
       responses:
-        "200":
+        '200':
           description: Newsletter updated successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Newsletter"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/Newsletter'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       summary: Delete Newsletter
       description: Deletes a specific newsletter. Requires editor ownership.
@@ -254,16 +254,16 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "204":
+        '204':
           description: Newsletter deleted successfully.
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /newsletters/{newsletterId}/subscribe:
     parameters:
@@ -284,9 +284,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SubscriptionRequest"
+              $ref: '#/components/schemas/SubscriptionRequest'
       responses:
-        "200": # Or 202 if processing async confirmation
+        '200': # Or 202 if processing async confirmation
           description: Subscription successful (or confirmation email sent).
           content:
             application/json:
@@ -296,16 +296,16 @@ paths:
                   message:
                     type: string
                   subscriber:
-                    $ref: "#/components/schemas/Subscriber"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound" # If newsletter doesn't exist
-        "409":
-          $ref: "#/components/responses/Conflict" # If already subscribed
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
+                    $ref: '#/components/schemas/Subscriber' 
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound' # If newsletter doesn't exist
+        '409':
+          $ref: '#/components/responses/Conflict' # If already subscribed
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+          
   /subscribe/confirm/{confirmationToken}:
     parameters:
       - name: confirmationToken
@@ -320,7 +320,7 @@ paths:
       tags:
         - Subscriptions
       responses:
-        "200":
+        '200':
           description: Subscription confirmed successfully.
           content:
             application/json:
@@ -329,12 +329,12 @@ paths:
                 properties:
                   message:
                     type: string
-        "400":
-          $ref: "#/components/responses/BadRequest" # e.g. invalid token
-        "404":
-          $ref: "#/components/responses/NotFound" # e.g. token not found
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '400':
+          $ref: '#/components/responses/BadRequest' # e.g. invalid token
+        '404':
+          $ref: '#/components/responses/NotFound' # e.g. token not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /unsubscribe/{unsubscribeToken}:
     parameters:
@@ -350,7 +350,7 @@ paths:
       tags:
         - Subscriptions
       responses:
-        "200":
+        '200':
           description: Unsubscribed successfully.
           content:
             application/json:
@@ -359,12 +359,12 @@ paths:
                 properties:
                   message:
                     type: string
-        "400":
-          $ref: "#/components/responses/BadRequest" # e.g. invalid token
-        "404":
-          $ref: "#/components/responses/NotFound" # e.g. token not found
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '400':
+          $ref: '#/components/responses/BadRequest' # e.g. invalid token
+        '404':
+          $ref: '#/components/responses/NotFound' # e.g. token not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /newsletters/{newsletterId}/subscribers:
     parameters:
@@ -384,22 +384,22 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: A list of subscribers.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Subscriber"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                  $ref: '#/components/schemas/Subscriber'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /newsletters/{newsletterId}/posts:
     parameters:
@@ -419,22 +419,22 @@ paths:
       security:
         - bearerAuth: [] # Or could be public with pagination
       responses:
-        "200":
+        '200':
           description: A list of published posts.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/PublishedPost"
-        "401":
-          $ref: "#/components/responses/Unauthorized" # If auth required and not provided/invalid
-        "403":
-          $ref: "#/components/responses/Forbidden" # If auth provided but not owner
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                  $ref: '#/components/schemas/PublishedPost'
+        '401':
+          $ref: '#/components/responses/Unauthorized' # If auth required and not provided/invalid
+        '403':
+          $ref: '#/components/responses/Forbidden' # If auth provided but not owner
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       summary: Publish or Schedule a New Post to Newsletter
       description: Creates a new post. If `scheduled_at` is provided, the post is scheduled; otherwise, it's published immediately. Requires editor ownership.
@@ -447,24 +447,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PublishPostRequest"
+              $ref: '#/components/schemas/PublishPostRequest'
       responses:
-        "201":
+        '201':
           description: Post published successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PublishedPost"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PublishedPost'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /newsletters/{newsletterId}/scheduled-posts:
     parameters:
@@ -484,22 +484,22 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: A list of scheduled posts.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/PublishedPost" # Scheduled posts share the same structure
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                  $ref: '#/components/schemas/PublishedPost' # Scheduled posts share the same structure
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /newsletters/{newsletterId}/scheduled-posts/{postId}:
     parameters:
@@ -526,20 +526,20 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Scheduled post details.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PublishedPost"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PublishedPost'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     put:
       summary: Update a Scheduled Post
       description: Allows an editor to update the content or `scheduled_at` time of a post that is scheduled but not yet published. Requires editor ownership.
@@ -553,24 +553,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PublishPostRequest" # Can reuse, as it contains all editable fields
+              $ref: '#/components/schemas/PublishPostRequest' # Can reuse, as it contains all editable fields
       responses:
-        "200":
+        '200':
           description: Scheduled post updated successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PublishedPost"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PublishedPost'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       summary: Cancel (Delete) a Scheduled Post
       description: Removes a post that is scheduled but not yet published. Requires editor ownership.
@@ -580,18 +580,18 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "204":
+        '204':
           description: Scheduled post cancelled successfully.
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  # Admin specific endpoints (example)
+# Admin specific endpoints (example)
   /admin/newsletters:
     get:
       summary: (Admin) List All Newsletters
@@ -602,20 +602,20 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: A list of all newsletters.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Newsletter"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                  $ref: '#/components/schemas/Newsletter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /admin/newsletters/{newsletterId}:
     parameters:
@@ -635,16 +635,16 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "204":
+        '204':
           description: Newsletter deleted successfully by admin.
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /admin/users:
     get:
@@ -656,20 +656,20 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: A list of all user profiles.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/EditorProfile"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                  $ref: '#/components/schemas/EditorProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /admin/users/{userId}/grant-admin:
     parameters:
@@ -689,22 +689,22 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Admin privileges granted successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EditorProfile" # Return updated profile
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/EditorProfile' # Return updated profile
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /admin/users/{userId}/revoke-admin:
     parameters:
@@ -724,22 +724,22 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Admin privileges revoked successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EditorProfile" # Return updated profile
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/EditorProfile' # Return updated profile
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 # Standardized responses
 components:
@@ -749,37 +749,37 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     Unauthorized:
       description: Unauthorized - Authentication is required and has failed or has not yet been provided.
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     Forbidden:
       description: Forbidden - The server understood the request but refuses to authorize it.
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     NotFound:
       description: Not Found - The requested resource could not be found.
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     Conflict:
       description: Conflict - The request could not be completed due to a conflict with the current state of the resource (e.g., duplicate entry).
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     InternalServerError:
       description: Internal Server Error - A generic error message, given when an unexpected condition was encountered.
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
   schemas:
     Error:
       type: object
@@ -1004,7 +1004,7 @@ components:
         # expires_in:
         #   type: integer
         user:
-          $ref: "#/components/schemas/EditorProfile" # Or a simplified user object
+          $ref: '#/components/schemas/EditorProfile' # Or a simplified user object
 
     PasswordResetRequest:
       type: object
