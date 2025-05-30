@@ -28,7 +28,15 @@ func (h *HTTPResponder) RespondJSON(w http.ResponseWriter, status int, data inte
 	
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		h.Logger.Error("Failed to encode JSON response", "error", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 	}
+}
+
+// RespondError sends an error response
+func (h *HTTPResponder) RespondError(w http.ResponseWriter, status int, message string) {
+	h.RespondJSON(w, status, map[string]string{
+		"error": message,
+	})
 }
 
 // HandleError handles API errors and sends appropriate responses

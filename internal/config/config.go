@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go-newsletter/internal/utils"
+
 )
 
 // Config holds all configuration for the application
@@ -47,13 +48,14 @@ type LoggingConfig struct {
 
 // SupabaseConfig holds Supabase-related configuration
 type SupabaseConfig struct {
-	ProjectURL string
-	AnonKey    string
-	JWTSecret  string
+	URL         string
+	AnonKey  string
+	JWTSecret   string
 }
 
 // Load loads configuration from environment variables
 func Load() *Config {
+
 	return &Config{
 		Server: ServerConfig{
 			Port:         utils.GetEnvWithDefault("PORT", "8080"),
@@ -74,9 +76,9 @@ func Load() *Config {
 			Level: utils.GetEnvWithDefault("LOG_LEVEL", "info"),
 		},
 		Supabase: SupabaseConfig{
-			ProjectURL: os.Getenv("SUPABASE_URL"),
-			AnonKey:    os.Getenv("SUPABASE_ANON_KEY"),
-			JWTSecret:  os.Getenv("SUPABASE_JWT_SECRET"),
+			URL:         os.Getenv("SUPABASE_URL"),
+			AnonKey:  os.Getenv("SUPABASE_ANON_KEY"),
+			JWTSecret:   os.Getenv("SUPABASE_JWT_SECRET"),
 		},
 		Resend: ResendConfig{
 			Sender: os.Getenv("RESEND_SENDER"),

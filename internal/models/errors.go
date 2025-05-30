@@ -1,6 +1,5 @@
 package models
 
-
 type APIError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -33,4 +32,4 @@ func NewConflictError(message string) APIError {
 
 func NewInternalServerError(message string) APIError {
 	return APIError{Code: 500, Message: message}
-} 
+}

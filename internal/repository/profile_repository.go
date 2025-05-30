@@ -95,4 +95,66 @@ func (r *ProfileRepository) Update(ctx context.Context, id string, req generated
 	}
 
 	return &p, nil
+}
+
+// Create creates a new profile for a user
+func (r *ProfileRepository) Create(ctx context.Context, id string) (*generated.EditorProfile, error) {
+	query := `
+		INSERT INTO public.profiles (id, full_name, avatar_url, is_admin, created_at, updated_at)
+		VALUES ($1, '', '', false, NOW(), NOW())
+		RETURNING id, full_name, avatar_url, is_admin, created_at, updated_at
+	`
+
+	var p generated.EditorProfile
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&p.Id, &p.FullName, &p.AvatarUrl, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt,
+	)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to create profile", "id", id, "error", err)
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+// GrantAdmin grants admin privileges to a user
+func (r *ProfileRepository) GrantAdmin(ctx context.Context, id string) (*generated.EditorProfile, error) {
+	query := `
+		UPDATE public.profiles 
+		SET is_admin = true, updated_at = NOW()
+		WHERE id = $1
+		RETURNING id, full_name, avatar_url, is_admin, created_at, updated_at
+	`
+
+	var p generated.EditorProfile
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&p.Id, &p.FullName, &p.AvatarUrl, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt,
+	)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to grant admin privileges", "id", id, "error", err)
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+// RevokeAdmin revokes admin privileges from a user
+func (r *ProfileRepository) RevokeAdmin(ctx context.Context, id string) (*generated.EditorProfile, error) {
+	query := `
+		UPDATE public.profiles 
+		SET is_admin = false, updated_at = NOW()
+		WHERE id = $1
+		RETURNING id, full_name, avatar_url, is_admin, created_at, updated_at
+	`
+
+	var p generated.EditorProfile
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&p.Id, &p.FullName, &p.AvatarUrl, &p.IsAdmin, &p.CreatedAt, &p.UpdatedAt,
+	)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to revoke admin privileges", "id", id, "error", err)
+		return nil, err
+	}
+
+	return &p, nil
 } 

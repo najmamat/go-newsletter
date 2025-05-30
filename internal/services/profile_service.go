@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 
 	"go-newsletter/internal/models"
 	"go-newsletter/internal/repository"
+	"go-newsletter/internal/utils"
 	"go-newsletter/pkg/generated"
 
 	"github.com/jackc/pgx/v5"
@@ -30,52 +30,84 @@ func NewProfileService(repo *repository.ProfileRepository, logger *slog.Logger) 
 func (s *ProfileService) GetAllProfiles(ctx context.Context) ([]generated.EditorProfile, error) {
 	profiles, err := s.repo.GetAll(ctx)
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to get all profiles", "error", err)
-		return nil, models.NewInternalServerError("Failed to retrieve profiles")
+		return nil, err
 	}
-	return profiles, nil
+
+	var result []generated.EditorProfile
+	for _, p := range profiles {
+		result = append(result, utils.ProfileToEditorProfile(p))
+	}
+	return result, nil
 }
 
 // GetProfileByID retrieves a profile by ID
 func (s *ProfileService) GetProfileByID(ctx context.Context, id string) (*generated.EditorProfile, error) {
-	if id == "" {
-		return nil, models.NewBadRequestError("Profile ID is required")
-	}
-
 	profile, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if err == pgx.ErrNoRows {
 			return nil, models.NewNotFoundError("Profile not found")
 		}
-		s.logger.ErrorContext(ctx, "Failed to get profile by ID", "id", id, "error", err)
-		return nil, models.NewInternalServerError("Failed to retrieve profile")
+		return nil, err
 	}
-
-	return profile, nil
+	result := utils.ProfileToEditorProfile(*profile)
+	return &result, nil
 }
 
 // UpdateProfile updates a profile
 func (s *ProfileService) UpdateProfile(ctx context.Context, id string, req generated.PutMeJSONBody) (*generated.EditorProfile, error) {
-	if id == "" {
-		return nil, models.NewBadRequestError("Profile ID is required")
-	}
-
-	// First check if profile exists
+	// Check if profile exists
 	_, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if err == pgx.ErrNoRows {
 			return nil, models.NewNotFoundError("Profile not found")
 		}
-		s.logger.ErrorContext(ctx, "Failed to check profile existence", "id", id, "error", err)
-		return nil, models.NewInternalServerError("Failed to update profile")
+		return nil, err
 	}
 
-	// Update the profile
+	// Update profile
 	updatedProfile, err := s.repo.Update(ctx, id, req)
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to update profile", "id", id, "error", err)
-		return nil, models.NewInternalServerError("Failed to update profile")
+		return nil, err
 	}
 
-	return updatedProfile, nil
+	result := utils.ProfileToEditorProfile(*updatedProfile)
+	return &result, nil
+}
+
+// GrantAdmin grants admin privileges to a user
+func (s *ProfileService) GrantAdmin(ctx context.Context, id string) (*generated.EditorProfile, error) {
+	// Check if profile exists
+	_, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, models.NewNotFoundError("Profile not found")
+		}
+		return nil, err
+	}
+
+	profile, err := s.repo.GrantAdmin(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	result := utils.ProfileToEditorProfile(*profile)
+	return &result, nil
+}
+
+// RevokeAdmin revokes admin privileges from a user
+func (s *ProfileService) RevokeAdmin(ctx context.Context, id string) (*generated.EditorProfile, error) {
+	// Check if profile exists
+	_, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, models.NewNotFoundError("Profile not found")
+		}
+		return nil, err
+	}
+
+	profile, err := s.repo.RevokeAdmin(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	result := utils.ProfileToEditorProfile(*profile)
+	return &result, nil
 } 

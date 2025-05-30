@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"go-newsletter/internal/config"
 	"go-newsletter/internal/handlers"
 	"go-newsletter/internal/services"
 	"go-newsletter/internal/utils"
@@ -21,7 +22,7 @@ type Server struct {
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger, mailingService *services.MailingService) *Server {
+func NewServer(profileService *services.ProfileService, authService *services.AuthService, cfg *config.Config, logger *slog.Logger, mailingService *services.MailingService) *Server {
 	return &Server{
 		profileHandler: handlers.NewProfileHandler(profileService, authService, logger),
 		authHandler:    handlers.NewAuthHandler(authService, logger),
@@ -58,28 +59,31 @@ func (s *Server) GetAdminUsers(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) PutAdminUsersUserIdGrantAdmin(w http.ResponseWriter, r *http.Request) {
 
-	s.notImplemented(w, r)
+	s.profileHandler.GrantAdmin(w, r)
 }
 
 func (s *Server) PutAdminUsersUserIdRevokeAdmin(w http.ResponseWriter, r *http.Request) {
 
-	s.notImplemented(w, r)
+	s.profileHandler.RevokeAdmin(w, r)
 }
 
 func (s *Server) DeleteAdminUsersUserId(w http.ResponseWriter, r *http.Request) {
 	s.notImplemented(w, r)
 }
 
-func (s *Server) PostAuthPasswordResetRequest(w http.ResponseWriter, r *http.Request) {
-	s.authHandler.PostAuthPasswordResetRequest(w, r)
+// PostAuthSignup handles POST /auth/signup endpoint
+func (s *Server) PostAuthSignup(w http.ResponseWriter, r *http.Request) {
+	s.authHandler.PostAuthSignup(w, r)
 }
 
+// PostAuthSignin handles POST /auth/signin endpoint
 func (s *Server) PostAuthSignin(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.PostAuthSignin(w, r)
 }
 
-func (s *Server) PostAuthSignup(w http.ResponseWriter, r *http.Request) {
-	s.authHandler.PostAuthSignup(w, r)
+// PostAuthPasswordResetRequest handles POST /auth/password-reset endpoint
+func (s *Server) PostAuthPasswordResetRequest(w http.ResponseWriter, r *http.Request) {
+	s.authHandler.PostAuthPasswordResetRequest(w, r)
 }
 
 func (s *Server) GetNewsletters(w http.ResponseWriter, r *http.Request) {

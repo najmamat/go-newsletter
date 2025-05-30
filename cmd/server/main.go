@@ -53,7 +53,7 @@ func main() {
 	profileService := services.NewProfileService(profileRepo, logger)
 	authService := services.NewAuthService(cfg.Supabase.JWTSecret, logger)
 	mailingService := services.NewMailingService(&cfg.Resend, logger)
-	apiServer := server.NewServer(profileService, authService, logger, mailingService)
+	apiServer := server.NewServer(profileService, authService, cfg, logger, mailingService)
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)
@@ -138,6 +138,29 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 	apiRouter := chi.NewRouter()
 	authMiddleware := middleware.NewAuthMiddleware(apiServer.GetAuthService(), logger)
 
+	// Public routes (no auth required)
+	apiRouter.Group(func(r chi.Router) {
+		// Auth
+		r.Post("/auth/signup", apiServer.PostAuthSignup)
+		r.Post("/auth/signin", apiServer.PostAuthSignin)
+		r.Post("/auth/password-reset", apiServer.PostAuthPasswordResetRequest)
+
+		// Newsletter Subscription
+		r.Route("/newsletters/{newsletterId}/subscribe", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			r.Post("/", apiServer.PostNewslettersNewsletterIdSubscribe)
+		})
+		r.Route("/newsletters/{newsletterId}/unsubscribe", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			r.Post("/", apiServer.PostNewslettersNewsletterIdUnsubscribe)
+		})
+		r.Route("/newsletters/{newsletterId}/confirm-subscription", func(r chi.Router) {
+			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
+			// Assuming token is a query param, not a UUID path param here
+			r.Get("/", apiServer.GetNewslettersNewsletterIdConfirmSubscription)
+		})
+	})
+
 	// Protected routes (require authentication, any editor)
 	apiRouter.Group(func(r chi.Router) {
 		r.Use(authMiddleware.RequireAuth)
@@ -182,30 +205,8 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 		r.Get("/admin/newsletters", apiServer.GetAdminNewsletters)
 		r.With(middleware.UUIDParamValidationMiddleware("newsletterId")).Delete("/admin/newsletters/{newsletterId}", apiServer.DeleteAdminNewslettersNewsletterId)
 		r.With(middleware.UUIDParamValidationMiddleware("userId")).Delete("/admin/users/{userId}", apiServer.DeleteAdminUsersUserId)
-	})
-
-	// Public routes
-	publicRouter := chi.NewRouter()
-	publicRouter.Group(func(r chi.Router) {
-		// Auth
-		r.Post("/auth/signup", apiServer.PostAuthSignup)
-		r.Post("/auth/signin", apiServer.PostAuthSignin)
-		r.Post("/auth/password-reset", apiServer.PostAuthPasswordResetRequest)
-
-		// Newsletter Subscription
-		r.Route("/newsletters/{newsletterId}/subscribe", func(r chi.Router) {
-			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
-			r.Post("/", apiServer.PostNewslettersNewsletterIdSubscribe)
-		})
-		r.Route("/newsletters/{newsletterId}/unsubscribe", func(r chi.Router) {
-			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
-			r.Post("/", apiServer.PostNewslettersNewsletterIdUnsubscribe)
-		})
-		r.Route("/newsletters/{newsletterId}/confirm-subscription", func(r chi.Router) {
-			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
-			// Assuming token is a query param, not a UUID path param here
-			r.Get("/", apiServer.GetNewslettersNewsletterIdConfirmSubscription)
-		})
+		r.With(middleware.UUIDParamValidationMiddleware("userId")).Put("/admin/users/{userId}/grant-admin", apiServer.PutAdminUsersUserIdGrantAdmin)
+		r.With(middleware.UUIDParamValidationMiddleware("userId")).Put("/admin/users/{userId}/revoke-admin", apiServer.PutAdminUsersUserIdRevokeAdmin)
 	})
 
 	// Mount the API router
