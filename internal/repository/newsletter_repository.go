@@ -241,3 +241,26 @@ func (r *NewsletterRepository) AdminDeleteByID(ctx context.Context, newsletterID
 
 	return nil
 }
+
+// CheckDuplicateName checks if an editor already has a newsletter with the given name
+func (r *NewsletterRepository) CheckDuplicateName(ctx context.Context, editorID string, name string, excludeID string) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM public.newsletters
+			WHERE editor_id = $1::uuid
+			AND LOWER(name) = LOWER($2)
+			AND (CASE 
+				WHEN $3 = '' THEN true
+				ELSE id != $3::uuid
+			END)
+		)
+	`
+	var exists bool
+	err := r.db.QueryRow(ctx, query, editorID, name, excludeID).Scan(&exists)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "REPO: failed to check duplicate newsletter name", "error", err)
+		return false, err
+	}
+	return exists, nil
+}

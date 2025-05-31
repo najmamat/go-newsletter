@@ -99,12 +99,6 @@ func (h *NewsletterHandler) PutNewsletters(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Validate that at least one field is provided for update
-	if req.Name == nil && req.Description == nil {
-		h.responder.HandleError(w, r, models.NewBadRequestError("At least one field (name or description) must be provided for update"))
-		return
-	}
-
 	newsletterID := chi.URLParam(r, "newsletterId")
 	if newsletterID == "" {
 		h.responder.HandleError(w, r, models.NewBadRequestError("Newsletter ID is required"))
