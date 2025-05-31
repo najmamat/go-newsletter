@@ -33,3 +33,11 @@ func NewConflictError(message string) APIError {
 func NewInternalServerError(message string) APIError {
 	return APIError{Code: 500, Message: message}
 }
+
+func IsNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+	apiErr, ok := err.(APIError)
+	return ok && apiErr.Code == 404
+}
