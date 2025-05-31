@@ -88,8 +88,7 @@ func (r *NewsletterRepository) GetByID(ctx context.Context, newsletterID string)
 
 }
 
-// TODO rename newsletter arg to newsletterCreate
-func (r *NewsletterRepository) Create(ctx context.Context, editorID string, newsletter *generated.NewsletterCreate) (*generated.Newsletter, error) {
+func (r *NewsletterRepository) Create(ctx context.Context, editorID string, newsletterCreate *generated.NewsletterCreate) (*generated.Newsletter, error) {
 	query := `
 	INSERT INTO public.newsletters (id, name, description, editor_id, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -103,8 +102,8 @@ func (r *NewsletterRepository) Create(ctx context.Context, editorID string, news
 	var n generated.Newsletter
 	err := r.db.QueryRow(ctx, query,
 		id,
-		newsletter.Name,
-		newsletter.Description,
+		newsletterCreate.Name,
+		newsletterCreate.Description,
 		editorID,
 		now,
 		now,

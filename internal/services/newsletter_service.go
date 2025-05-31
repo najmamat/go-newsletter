@@ -26,12 +26,7 @@ func (s *NewsletterService) GetNewslettersOwnedByEditor(ctx context.Context, edi
 		s.logger.ErrorContext(ctx, "SERVICE: failed to find newsletters of current editor", "error", err)
 		return nil, err
 	}
-
-	var result []generated.Newsletter
-	for _, n := range newsletters {
-		result = append(result, n)
-	}
-	return result, nil
+	return newsletters, nil
 }
 
 func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterID string, editorID string) (*generated.Newsletter, error) {

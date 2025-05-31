@@ -39,12 +39,7 @@ func (h *NewsletterHandler) GetNewslettersOwnedByEditor(w http.ResponseWriter, r
 		return
 	}
 
-	var newslettersResponse []generated.Newsletter
-	for _, newsletter := range newsletters {
-		newslettersResponse = append(newslettersResponse, newsletter)
-	}
-
-	h.responder.RespondJSON(w, http.StatusOK, newslettersResponse)
+	h.responder.RespondJSON(w, http.StatusOK, newsletters)
 }
 
 func (h *NewsletterHandler) GetNewsletterByID(w http.ResponseWriter, r *http.Request) {
