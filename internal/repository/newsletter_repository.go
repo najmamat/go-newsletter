@@ -82,6 +82,7 @@ func (r *NewsletterRepository) GetByID(ctx context.Context, id string) (*generat
 
 }
 
+// TODO rename newsletter arg to newsletterCreate
 func (r *NewsletterRepository) Create(ctx context.Context, editorID string, newsletter *generated.NewsletterCreate) (*generated.Newsletter, error) {
 	query := `
 	INSERT INTO public.newsletters (id, name, description, editor_id, created_at, updated_at)
@@ -112,6 +113,32 @@ func (r *NewsletterRepository) Create(ctx context.Context, editorID string, news
 
 	if err != nil {
 		r.logger.Error("REPO: failed to create newsletter", "error", err)
+		return nil, err
+	}
+
+	return &n, nil
+}
+
+// TODO unify camel case in editorID
+func (r *NewsletterRepository) Update(ctx context.Context, newsletterID string, newsletterUpdate *generated.NewsletterUpdate) (*generated.Newsletter, error) {
+	query := `
+		UPDATE public.newsletters
+		SET name = $2, description = $3, updated_at = $4
+		WHERE id = $1
+		RETURNING id, name, description, editor_id, created_at, updated_at
+	`
+	now := time.Now()
+	var n generated.Newsletter
+	err := r.db.QueryRow(ctx, query, newsletterID, newsletterUpdate.Name, newsletterUpdate.Description, now).Scan(
+		&n.Id,
+		&n.Name,
+		&n.Description,
+		&n.EditorId,
+		&n.CreatedAt,
+		&n.UpdatedAt,
+	)
+	if err != nil {
+		r.logger.Error("REPO: failed to update newsletter", "error", err)
 		return nil, err
 	}
 

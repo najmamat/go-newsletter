@@ -46,7 +46,7 @@ func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterId 
 		s.logger.WarnContext(ctx, "SERVICE: unauthorized access attempt",
 			"requested_editor_id", editorId,
 			"newsletter_editor_id", newsletter.EditorId.String())
-		return nil, models.NewForbiddenError("You don't have access to this newsletter")
+		return nil, models.NewForbiddenError("SERVICE: You don't have access to this newsletter")
 	}
 
 	return newsletter, nil
@@ -58,5 +58,23 @@ func (s *NewsletterService) CreateNewsletter(ctx context.Context, editorId strin
 		s.logger.ErrorContext(ctx, "SERVICE: failed to create newsletter", "error", err)
 		return nil, err
 	}
+	return newsletter, nil
+}
+
+func (s *NewsletterService) UpdateNewsletter(ctx context.Context, editorId string, newsletterId string, newsletterUpdate generated.NewsletterUpdate) (*generated.Newsletter, error) {
+	newsletter, err := s.repo.Update(ctx, newsletterId, &newsletterUpdate)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "SERVICE: failed to update newsletter", "error", err)
+		return nil, err
+	}
+
+	// Check if the requesting user is the editor of this newsletter
+	if newsletter.EditorId.String() != editorId {
+		s.logger.WarnContext(ctx, "SERVICE: unauthorized access attempt",
+			"requested_editor_id", editorId,
+			"newsletter_editor_id", newsletter.EditorId.String())
+		return nil, models.NewForbiddenError("SERVICE: You don't have access to this newsletter")
+	}
+
 	return newsletter, nil
 }

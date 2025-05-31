@@ -107,8 +107,9 @@ func (s *Server) GetNewslettersNewsletterId(w http.ResponseWriter, r *http.Reque
 	s.newsletterHandler.GetNewsletterByID(w, r)
 }
 
+// PutNewslettersNewsletterId handles PUT /newsletters/{newsletterId}
 func (s *Server) PutNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.PutNewsletters(w, r)
 }
 
 func (s *Server) GetNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {
