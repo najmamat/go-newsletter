@@ -99,9 +99,14 @@ func (h *NewsletterHandler) PutNewsletters(w http.ResponseWriter, r *http.Reques
 	}
 
 	var req generated.NewsletterUpdate
-	// TODO partial update
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.responder.HandleError(w, r, models.NewBadRequestError("HANDLER: Invalid JSON payload"))
+		return
+	}
+
+	// Validate that at least one field is provided for update
+	if req.Name == nil && req.Description == nil {
+		h.responder.HandleError(w, r, models.NewBadRequestError("HANDLER: At least one field (name or description) must be provided for update"))
 		return
 	}
 
@@ -113,10 +118,13 @@ func (h *NewsletterHandler) PutNewsletters(w http.ResponseWriter, r *http.Reques
 
 	newsletter, err := h.service.UpdateNewsletter(r.Context(), user.UserID.String(), newsletterId, req)
 	if err != nil {
-		// TODO return 404 when not found (curr. 500)
+		if models.IsNotFoundError(err) {
+			h.responder.HandleError(w, r, models.NewNotFoundError("HANDLER: Newsletter not found"))
+			return
+		}
 		h.responder.HandleError(w, r, err)
 		return
 	}
 
-	h.responder.RespondJSON(w, http.StatusCreated, newsletter)
+	h.responder.RespondJSON(w, http.StatusOK, newsletter)
 }

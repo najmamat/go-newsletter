@@ -62,9 +62,14 @@ func (s *NewsletterService) CreateNewsletter(ctx context.Context, editorId strin
 }
 
 func (s *NewsletterService) UpdateNewsletter(ctx context.Context, editorId string, newsletterId string, newsletterUpdate generated.NewsletterUpdate) (*generated.Newsletter, error) {
-	newsletter, err := s.repo.Update(ctx, newsletterId, &newsletterUpdate)
+	// First check if the newsletter exists and user has access
+	newsletter, err := s.repo.GetByID(ctx, newsletterId)
 	if err != nil {
-		s.logger.ErrorContext(ctx, "SERVICE: failed to update newsletter", "error", err)
+		if models.IsNotFoundError(err) {
+			s.logger.ErrorContext(ctx, "SERVICE: Newsletter not found", "id", newsletterId)
+			return nil, err
+		}
+		s.logger.ErrorContext(ctx, "SERVICE: failed to get newsletter", "error", err)
 		return nil, err
 	}
 
@@ -76,5 +81,12 @@ func (s *NewsletterService) UpdateNewsletter(ctx context.Context, editorId strin
 		return nil, models.NewForbiddenError("SERVICE: You don't have access to this newsletter")
 	}
 
-	return newsletter, nil
+	// Proceed with update
+	updatedNewsletter, err := s.repo.Update(ctx, newsletterId, &newsletterUpdate)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "SERVICE: failed to update newsletter", "error", err)
+		return nil, err
+	}
+
+	return updatedNewsletter, nil
 }

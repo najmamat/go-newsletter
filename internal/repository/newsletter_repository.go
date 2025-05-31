@@ -2,11 +2,13 @@ package repository
 
 import (
 	"context"
+	"go-newsletter/internal/models"
 	"go-newsletter/pkg/generated"
 	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -75,6 +77,10 @@ func (r *NewsletterRepository) GetByID(ctx context.Context, id string) (*generat
 		&n.CreatedAt,
 		&n.UpdatedAt)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			r.logger.ErrorContext(ctx, "REPO: Newsletter not found", "id", id)
+			return nil, models.NewNotFoundError("Newsletter not found")
+		}
 		r.logger.ErrorContext(ctx, "REPO: Failed to get newsletter by ID", "id", id, "error", err)
 		return nil, err
 	}
@@ -121,6 +127,23 @@ func (r *NewsletterRepository) Create(ctx context.Context, editorID string, news
 
 // TODO unify camel case in editorID
 func (r *NewsletterRepository) Update(ctx context.Context, newsletterID string, newsletterUpdate *generated.NewsletterUpdate) (*generated.Newsletter, error) {
+	// First get the current newsletter to handle partial updates
+	current, err := r.GetByID(ctx, newsletterID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use existing values if update fields are not provided
+	name := current.Name
+	if newsletterUpdate.Name != nil {
+		name = *newsletterUpdate.Name
+	}
+
+	description := current.Description
+	if newsletterUpdate.Description != nil {
+		description = newsletterUpdate.Description
+	}
+
 	query := `
 		UPDATE public.newsletters
 		SET name = $2, description = $3, updated_at = $4
@@ -129,7 +152,7 @@ func (r *NewsletterRepository) Update(ctx context.Context, newsletterID string, 
 	`
 	now := time.Now()
 	var n generated.Newsletter
-	err := r.db.QueryRow(ctx, query, newsletterID, newsletterUpdate.Name, newsletterUpdate.Description, now).Scan(
+	err = r.db.QueryRow(ctx, query, newsletterID, name, description, now).Scan(
 		&n.Id,
 		&n.Name,
 		&n.Description,
