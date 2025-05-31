@@ -186,3 +186,59 @@ func (r *NewsletterRepository) Delete(ctx context.Context, newsletterID string) 
 
 	return nil
 }
+
+func (r *NewsletterRepository) AdminGetAll(ctx context.Context) ([]generated.Newsletter, error) {
+	query := `
+		SELECT id, name, description, editor_id, created_at, updated_at
+		FROM public.newsletters
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "REPO: Failed to get all newsletters", "error", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var newsletters []generated.Newsletter
+	for rows.Next() {
+		var n generated.Newsletter
+		if err := rows.Scan(&n.Id,
+			&n.Name,
+			&n.Description,
+			&n.EditorId,
+			&n.CreatedAt,
+			&n.UpdatedAt); err != nil {
+			r.logger.ErrorContext(ctx, "Failed to scan newsletter row", "error", err)
+			return nil, err
+		}
+		newsletters = append(newsletters, n)
+	}
+
+	if err := rows.Err(); err != nil {
+		r.logger.ErrorContext(ctx, "Error iterating newsletter rows", "error", err)
+		return nil, err
+	}
+
+	return newsletters, nil
+}
+
+func (r *NewsletterRepository) AdminDeleteByID(ctx context.Context, newsletterID string) error {
+	query := `
+		DELETE FROM public.newsletters
+		WHERE id = $1
+	`
+	result, err := r.db.Exec(ctx, query, newsletterID)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "REPO: failed to delete newsletter", "id", newsletterID, "error", err)
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		r.logger.ErrorContext(ctx, "REPO: Newsletter not found for deletion", "id", newsletterID)
+		return models.NewNotFoundError("Newsletter not found")
+	}
+
+	return nil
+}

@@ -29,7 +29,7 @@ func NewServer(profileService *services.ProfileService, authService *services.Au
 		authHandler:       handlers.NewAuthHandler(authService, logger),
 		authService:       authService,
 		mailingService:    mailingService,
-		newsletterHandler: handlers.NewNewsletterHandler(newsletterService, logger),
+		newsletterHandler: handlers.NewNewsletterHandler(newsletterService, profileService, logger),
 		responder:         utils.NewHTTPResponder(logger),
 		logger:            logger,
 	}
@@ -48,11 +48,11 @@ func (s *Server) PutMe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetAdminNewsletters(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.GetAllNewsletters(w, r)
 }
 
 func (s *Server) DeleteAdminNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.DeleteNewsletterByID(w, r)
 }
 
 func (s *Server) GetAdminUsers(w http.ResponseWriter, r *http.Request) {

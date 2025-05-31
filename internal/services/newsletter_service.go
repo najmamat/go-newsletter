@@ -119,3 +119,20 @@ func (s *NewsletterService) DeleteNewsletter(ctx context.Context, editorID strin
 
 	return nil
 }
+
+func (s *NewsletterService) AdminGetAllNewsletters(ctx context.Context) ([]generated.Newsletter, error) {
+	newsletters, err := s.repo.AdminGetAll(ctx)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "SERVICE: failed to get all newsletters", "error", err)
+		return nil, err
+	}
+	return newsletters, nil
+}
+
+func (s *NewsletterService) AdminDeleteNewsletterByID(ctx context.Context, newsletterID string) error {
+	if err := s.repo.AdminDeleteByID(ctx, newsletterID); err != nil {
+		s.logger.ErrorContext(ctx, "SERVICE: failed to delete newsletter", "error", err)
+		return err
+	}
+	return nil
+}
