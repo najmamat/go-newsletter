@@ -27,7 +27,7 @@ func NewNewsletterHandler(service *services.NewsletterService, logger *slog.Logg
 func (h *NewsletterHandler) GetNewslettersOwnedByEditor(w http.ResponseWriter, r *http.Request) {
 	user, ok := services.GetUserFromContext(r.Context())
 	if !ok {
-		h.responder.HandleError(w, r, models.NewUnauthorizedError("HANDLER: HANDLER: User not authenticated"))
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("HANDLER: User not authenticated"))
 		return
 	}
 
@@ -52,13 +52,13 @@ func (h *NewsletterHandler) GetNewsletterByID(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	newsletterId := chi.URLParam(r, "newsletterId")
-	if newsletterId == "" {
+	newsletterID := chi.URLParam(r, "newsletterId")
+	if newsletterID == "" {
 		h.responder.HandleError(w, r, models.NewBadRequestError("HANDLER: Newsletter ID is required"))
 		return
 	}
 
-	newsletter, err := h.service.GetNewsletterByID(r.Context(), newsletterId, user.UserID.String())
+	newsletter, err := h.service.GetNewsletterByID(r.Context(), newsletterID, user.UserID.String())
 	if err != nil {
 		h.responder.HandleError(w, r, err)
 		return
@@ -74,14 +74,12 @@ func (h *NewsletterHandler) PostNewsletters(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Decode request body
 	var req generated.NewsletterCreate
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.responder.HandleError(w, r, models.NewBadRequestError("HANDLER: Invalid JSON payload"))
 		return
 	}
 
-	// Create newsletter
 	newsletter, err := h.service.CreateNewsletter(r.Context(), user.UserID.String(), req)
 	if err != nil {
 		h.responder.HandleError(w, r, err)
@@ -110,13 +108,13 @@ func (h *NewsletterHandler) PutNewsletters(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	newsletterId := chi.URLParam(r, "newsletterId")
-	if newsletterId == "" {
+	newsletterID := chi.URLParam(r, "newsletterId")
+	if newsletterID == "" {
 		h.responder.HandleError(w, r, models.NewBadRequestError("HANDLER: Newsletter ID is required"))
 		return
 	}
 
-	newsletter, err := h.service.UpdateNewsletter(r.Context(), user.UserID.String(), newsletterId, req)
+	newsletter, err := h.service.UpdateNewsletter(r.Context(), user.UserID.String(), newsletterID, req)
 	if err != nil {
 		if models.IsNotFoundError(err) {
 			h.responder.HandleError(w, r, models.NewNotFoundError("HANDLER: Newsletter not found"))

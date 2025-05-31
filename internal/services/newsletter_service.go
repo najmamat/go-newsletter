@@ -20,8 +20,8 @@ func NewNewsletterService(repo *repository.NewsletterRepository, logger *slog.Lo
 	}
 }
 
-func (s *NewsletterService) GetNewslettersOwnedByEditor(ctx context.Context, editorId string) ([]generated.Newsletter, error) {
-	newsletters, err := s.repo.GetNewslettersOwnedByEditor(ctx, editorId)
+func (s *NewsletterService) GetNewslettersOwnedByEditor(ctx context.Context, editorID string) ([]generated.Newsletter, error) {
+	newsletters, err := s.repo.GetNewslettersOwnedByEditor(ctx, editorID)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "SERVICE: failed to find newsletters of current editor", "error", err)
 		return nil, err
@@ -34,17 +34,17 @@ func (s *NewsletterService) GetNewslettersOwnedByEditor(ctx context.Context, edi
 	return result, nil
 }
 
-func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterId string, editorId string) (*generated.Newsletter, error) {
-	newsletter, err := s.repo.GetByID(ctx, newsletterId)
+func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterID string, editorID string) (*generated.Newsletter, error) {
+	newsletter, err := s.repo.GetByID(ctx, newsletterID)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "SERVICE: failed to get newsletter by ID", "error", err)
 		return nil, err
 	}
 
 	// Check if the requesting user is the editor of this newsletter
-	if newsletter.EditorId.String() != editorId {
+	if newsletter.EditorId.String() != editorID {
 		s.logger.WarnContext(ctx, "SERVICE: unauthorized access attempt",
-			"requested_editor_id", editorId,
+			"requested_editor_id", editorID,
 			"newsletter_editor_id", newsletter.EditorId.String())
 		return nil, models.NewForbiddenError("SERVICE: You don't have access to this newsletter")
 	}
@@ -52,8 +52,8 @@ func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterId 
 	return newsletter, nil
 }
 
-func (s *NewsletterService) CreateNewsletter(ctx context.Context, editorId string, newsletterCreate generated.NewsletterCreate) (*generated.Newsletter, error) {
-	newsletter, err := s.repo.Create(ctx, editorId, &newsletterCreate)
+func (s *NewsletterService) CreateNewsletter(ctx context.Context, editorID string, newsletterCreate generated.NewsletterCreate) (*generated.Newsletter, error) {
+	newsletter, err := s.repo.Create(ctx, editorID, &newsletterCreate)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "SERVICE: failed to create newsletter", "error", err)
 		return nil, err
@@ -61,12 +61,12 @@ func (s *NewsletterService) CreateNewsletter(ctx context.Context, editorId strin
 	return newsletter, nil
 }
 
-func (s *NewsletterService) UpdateNewsletter(ctx context.Context, editorId string, newsletterId string, newsletterUpdate generated.NewsletterUpdate) (*generated.Newsletter, error) {
+func (s *NewsletterService) UpdateNewsletter(ctx context.Context, editorID string, newsletterID string, newsletterUpdate generated.NewsletterUpdate) (*generated.Newsletter, error) {
 	// First check if the newsletter exists and user has access
-	newsletter, err := s.repo.GetByID(ctx, newsletterId)
+	newsletter, err := s.repo.GetByID(ctx, newsletterID)
 	if err != nil {
 		if models.IsNotFoundError(err) {
-			s.logger.ErrorContext(ctx, "SERVICE: Newsletter not found", "id", newsletterId)
+			s.logger.ErrorContext(ctx, "SERVICE: Newsletter not found", "id", newsletterID)
 			return nil, err
 		}
 		s.logger.ErrorContext(ctx, "SERVICE: failed to get newsletter", "error", err)
@@ -74,15 +74,15 @@ func (s *NewsletterService) UpdateNewsletter(ctx context.Context, editorId strin
 	}
 
 	// Check if the requesting user is the editor of this newsletter
-	if newsletter.EditorId.String() != editorId {
+	if newsletter.EditorId.String() != editorID {
 		s.logger.WarnContext(ctx, "SERVICE: unauthorized access attempt",
-			"requested_editor_id", editorId,
+			"requested_editor_id", editorID,
 			"newsletter_editor_id", newsletter.EditorId.String())
 		return nil, models.NewForbiddenError("SERVICE: You don't have access to this newsletter")
 	}
 
 	// Proceed with update
-	updatedNewsletter, err := s.repo.Update(ctx, newsletterId, &newsletterUpdate)
+	updatedNewsletter, err := s.repo.Update(ctx, newsletterID, &newsletterUpdate)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "SERVICE: failed to update newsletter", "error", err)
 		return nil, err

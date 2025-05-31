@@ -62,14 +62,14 @@ func (r *NewsletterRepository) GetNewslettersOwnedByEditor(ctx context.Context, 
 
 }
 
-func (r *NewsletterRepository) GetByID(ctx context.Context, id string) (*generated.Newsletter, error) {
+func (r *NewsletterRepository) GetByID(ctx context.Context, newsletterID string) (*generated.Newsletter, error) {
 	query := `
 		SELECT id, name, description, editor_id, created_at, updated_at
 		FROM public.newsletters
 		WHERE id = $1
 	`
 	var n generated.Newsletter
-	err := r.db.QueryRow(ctx, query, id).Scan(
+	err := r.db.QueryRow(ctx, query, newsletterID).Scan(
 		&n.Id,
 		&n.Name,
 		&n.Description,
@@ -78,10 +78,10 @@ func (r *NewsletterRepository) GetByID(ctx context.Context, id string) (*generat
 		&n.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			r.logger.ErrorContext(ctx, "REPO: Newsletter not found", "id", id)
+			r.logger.ErrorContext(ctx, "REPO: Newsletter not found", "id", newsletterID)
 			return nil, models.NewNotFoundError("Newsletter not found")
 		}
-		r.logger.ErrorContext(ctx, "REPO: Failed to get newsletter by ID", "id", id, "error", err)
+		r.logger.ErrorContext(ctx, "REPO: Failed to get newsletter by ID", "id", newsletterID, "error", err)
 		return nil, err
 	}
 	return &n, nil
