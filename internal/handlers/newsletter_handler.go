@@ -27,7 +27,7 @@ func NewNewsletterHandler(service *services.NewsletterService, logger *slog.Logg
 func (h *NewsletterHandler) GetNewslettersOwnedByEditor(w http.ResponseWriter, r *http.Request) {
 	user, ok := services.GetUserFromContext(r.Context())
 	if !ok {
-		h.responder.HandleError(w, r, models.NewUnauthorizedError("HANDLER: User not authenticated"))
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
 		return
 	}
 
@@ -48,13 +48,13 @@ func (h *NewsletterHandler) GetNewslettersOwnedByEditor(w http.ResponseWriter, r
 func (h *NewsletterHandler) GetNewsletterByID(w http.ResponseWriter, r *http.Request) {
 	user, ok := services.GetUserFromContext(r.Context())
 	if !ok {
-		h.responder.HandleError(w, r, models.NewUnauthorizedError("HANDLER: User not authenticated"))
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
 		return
 	}
 
 	newsletterID := chi.URLParam(r, "newsletterId")
 	if newsletterID == "" {
-		h.responder.HandleError(w, r, models.NewBadRequestError("HANDLER: Newsletter ID is required"))
+		h.responder.HandleError(w, r, models.NewBadRequestError("Newsletter ID is required"))
 		return
 	}
 
@@ -70,13 +70,13 @@ func (h *NewsletterHandler) GetNewsletterByID(w http.ResponseWriter, r *http.Req
 func (h *NewsletterHandler) PostNewsletters(w http.ResponseWriter, r *http.Request) {
 	user, ok := services.GetUserFromContext(r.Context())
 	if !ok {
-		h.responder.HandleError(w, r, models.NewUnauthorizedError("HANDLER: User not authenticated"))
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
 		return
 	}
 
 	var req generated.NewsletterCreate
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.responder.HandleError(w, r, models.NewBadRequestError("HANDLER: Invalid JSON payload"))
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid JSON payload"))
 		return
 	}
 
@@ -92,32 +92,32 @@ func (h *NewsletterHandler) PostNewsletters(w http.ResponseWriter, r *http.Reque
 func (h *NewsletterHandler) PutNewsletters(w http.ResponseWriter, r *http.Request) {
 	user, ok := services.GetUserFromContext(r.Context())
 	if !ok {
-		h.responder.HandleError(w, r, models.NewUnauthorizedError("HANDLER: User not authenticated"))
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
 		return
 	}
 
 	var req generated.NewsletterUpdate
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.responder.HandleError(w, r, models.NewBadRequestError("HANDLER: Invalid JSON payload"))
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid JSON payload"))
 		return
 	}
 
 	// Validate that at least one field is provided for update
 	if req.Name == nil && req.Description == nil {
-		h.responder.HandleError(w, r, models.NewBadRequestError("HANDLER: At least one field (name or description) must be provided for update"))
+		h.responder.HandleError(w, r, models.NewBadRequestError("At least one field (name or description) must be provided for update"))
 		return
 	}
 
 	newsletterID := chi.URLParam(r, "newsletterId")
 	if newsletterID == "" {
-		h.responder.HandleError(w, r, models.NewBadRequestError("HANDLER: Newsletter ID is required"))
+		h.responder.HandleError(w, r, models.NewBadRequestError("Newsletter ID is required"))
 		return
 	}
 
 	newsletter, err := h.service.UpdateNewsletter(r.Context(), user.UserID.String(), newsletterID, req)
 	if err != nil {
 		if models.IsNotFoundError(err) {
-			h.responder.HandleError(w, r, models.NewNotFoundError("HANDLER: Newsletter not found"))
+			h.responder.HandleError(w, r, models.NewNotFoundError("Newsletter not found"))
 			return
 		}
 		h.responder.HandleError(w, r, err)
@@ -125,4 +125,29 @@ func (h *NewsletterHandler) PutNewsletters(w http.ResponseWriter, r *http.Reques
 	}
 
 	h.responder.RespondJSON(w, http.StatusOK, newsletter)
+}
+
+func (h *NewsletterHandler) DeleteNewsletter(w http.ResponseWriter, r *http.Request) {
+	user, ok := services.GetUserFromContext(r.Context())
+	if !ok {
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
+		return
+	}
+
+	newsletterID := chi.URLParam(r, "newsletterId")
+	if newsletterID == "" {
+		h.responder.HandleError(w, r, models.NewBadRequestError("Newsletter ID is required"))
+		return
+	}
+
+	if err := h.service.DeleteNewsletter(r.Context(), user.UserID.String(), newsletterID); err != nil {
+		if models.IsNotFoundError(err) {
+			h.responder.HandleError(w, r, models.NewNotFoundError("Newsletter not found"))
+			return
+		}
+		h.responder.HandleError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

@@ -90,3 +90,32 @@ func (s *NewsletterService) UpdateNewsletter(ctx context.Context, editorID strin
 
 	return updatedNewsletter, nil
 }
+
+func (s *NewsletterService) DeleteNewsletter(ctx context.Context, editorID string, newsletterID string) error {
+	// First check if the newsletter exists and user has access
+	newsletter, err := s.repo.GetByID(ctx, newsletterID)
+	if err != nil {
+		if models.IsNotFoundError(err) {
+			s.logger.ErrorContext(ctx, "SERVICE: Newsletter not found", "id", newsletterID)
+			return err
+		}
+		s.logger.ErrorContext(ctx, "SERVICE: failed to get newsletter", "error", err)
+		return err
+	}
+
+	// Check if the requesting user is the editor of this newsletter
+	if newsletter.EditorId.String() != editorID {
+		s.logger.WarnContext(ctx, "SERVICE: unauthorized deletion attempt",
+			"requested_editor_id", editorID,
+			"newsletter_editor_id", newsletter.EditorId.String())
+		return models.NewForbiddenError("You don't have access to this newsletter")
+	}
+
+	// Proceed with deletion
+	if err := s.repo.Delete(ctx, newsletterID); err != nil {
+		s.logger.ErrorContext(ctx, "SERVICE: failed to delete newsletter", "error", err)
+		return err
+	}
+
+	return nil
+}

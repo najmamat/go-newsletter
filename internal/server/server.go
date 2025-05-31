@@ -99,7 +99,7 @@ func (s *Server) PostNewsletters(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) DeleteNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.DeleteNewsletter(w, r)
 }
 
 // GetNewsletters handles GET /newsletters/{newsletterId}

@@ -125,7 +125,6 @@ func (r *NewsletterRepository) Create(ctx context.Context, editorID string, news
 	return &n, nil
 }
 
-// TODO unify camel case in editorID
 func (r *NewsletterRepository) Update(ctx context.Context, newsletterID string, newsletterUpdate *generated.NewsletterUpdate) (*generated.Newsletter, error) {
 	// First get the current newsletter to handle partial updates
 	current, err := r.GetByID(ctx, newsletterID)
@@ -166,4 +165,24 @@ func (r *NewsletterRepository) Update(ctx context.Context, newsletterID string, 
 	}
 
 	return &n, nil
+}
+
+func (r *NewsletterRepository) Delete(ctx context.Context, newsletterID string) error {
+	query := `
+		DELETE FROM public.newsletters
+		WHERE id = $1
+	`
+	result, err := r.db.Exec(ctx, query, newsletterID)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "REPO: failed to delete newsletter", "id", newsletterID, "error", err)
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		r.logger.ErrorContext(ctx, "REPO: Newsletter not found for deletion", "id", newsletterID)
+		return models.NewNotFoundError("Newsletter not found")
+	}
+
+	return nil
 }
