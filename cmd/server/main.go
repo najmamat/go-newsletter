@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -24,49 +23,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func findProjectRoot() (string, error) {
-	// Start from the current working directory
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("failed to get working directory: %w", err)
-	}
-
-	// Look for go.mod file to identify project root
-	currentDir := wd
-	for {
-		if _, err := os.Stat(filepath.Join(currentDir, "go.mod")); err == nil {
-			return currentDir, nil
-		}
-
-		// Go up one directory
-		parentDir := filepath.Dir(currentDir)
-		if parentDir == currentDir {
-			// We've reached the root directory
-			return "", fmt.Errorf("could not find project root (no go.mod file found)")
-		}
-		currentDir = parentDir
-	}
-}
-
 func main() {
 	// Initialize logger
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
 
-	// Find project root and load environment variables
-	projectRoot, err := findProjectRoot()
-	if err != nil {
-		logger.Error("Failed to find project root", "error", err)
-		os.Exit(1)
+	// Load environment variables
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		logger.Warn("Error loading .env file", "error", err)
 	}
-
-	envPath := filepath.Join(projectRoot, ".env")
-	if err := godotenv.Load(envPath); err != nil {
-		logger.Error("Error loading .env file", "error", err, "path", envPath)
-		os.Exit(1)
-	}
-	logger.Info("Successfully loaded .env file", "path", envPath)
 
 	// Setup server configuration
 	port := utils.GetEnvWithDefault("PORT", "8080")
@@ -85,10 +51,10 @@ func main() {
 	// Initialize dependencies using dependency injection
 	profileRepo := repository.NewProfileRepository(dbpool, logger)
 	newsletterRepo := repository.NewNewsletterRepository(dbpool, logger)
+	newsletterService := services.NewNewsletterService(newsletterRepo, logger)
 	profileService := services.NewProfileService(profileRepo, logger)
 	authService := services.NewAuthService(cfg.Supabase.JWTSecret, logger)
 	mailingService := services.NewMailingService(&cfg.Resend, logger)
-	newsletterService := services.NewNewsletterService(newsletterRepo, logger)
 	apiServer := server.NewServer(profileService, authService, cfg, logger, mailingService, newsletterService)
 
 	// Initialize router and middleware
