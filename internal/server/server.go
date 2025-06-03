@@ -13,23 +13,25 @@ import (
 
 // Server implements the generated ServerInterface
 type Server struct {
-	profileHandler *handlers.ProfileHandler
-	authHandler    *handlers.AuthHandler
-	authService    *services.AuthService
-	mailingService *services.MailingService
-	responder      *utils.HTTPResponder
-	logger         *slog.Logger // Keep logger for non-HTTP operations
+	profileHandler    *handlers.ProfileHandler
+	authHandler       *handlers.AuthHandler
+	authService       *services.AuthService
+	mailingService    *services.MailingService
+	newsletterHandler *handlers.NewsletterHandler
+	responder         *utils.HTTPResponder
+	logger            *slog.Logger // Keep logger for non-HTTP operations
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, authService *services.AuthService, cfg *config.Config, logger *slog.Logger, mailingService *services.MailingService) *Server {
+func NewServer(profileService *services.ProfileService, authService *services.AuthService, cfg *config.Config, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService) *Server {
 	return &Server{
-		profileHandler: handlers.NewProfileHandler(profileService, authService, logger),
-		authHandler:    handlers.NewAuthHandler(authService, logger),
-		authService:    authService,
-		mailingService: mailingService,
-		responder:      utils.NewHTTPResponder(logger),
-		logger:         logger,
+		profileHandler:    handlers.NewProfileHandler(profileService, authService, logger),
+		authHandler:       handlers.NewAuthHandler(authService, logger),
+		authService:       authService,
+		mailingService:    mailingService,
+		newsletterHandler: handlers.NewNewsletterHandler(newsletterService, profileService, logger),
+		responder:         utils.NewHTTPResponder(logger),
+		logger:            logger,
 	}
 }
 
@@ -46,11 +48,11 @@ func (s *Server) PutMe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetAdminNewsletters(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.GetAllNewsletters(w, r)
 }
 
 func (s *Server) DeleteAdminNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.DeleteNewsletterByID(w, r)
 }
 
 func (s *Server) GetAdminUsers(w http.ResponseWriter, r *http.Request) {
@@ -86,24 +88,28 @@ func (s *Server) PostAuthPasswordResetRequest(w http.ResponseWriter, r *http.Req
 	s.authHandler.PostAuthPasswordResetRequest(w, r)
 }
 
+// GetNewsletters handles GET /newsletters - get newsletters owned by current editor
 func (s *Server) GetNewsletters(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.GetNewslettersOwnedByEditor(w, r)
 }
 
+// PostNewsletters handles POST /newsletters - create newsletter
 func (s *Server) PostNewsletters(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.PostNewsletters(w, r)
 }
 
 func (s *Server) DeleteNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.DeleteNewsletter(w, r)
 }
 
+// GetNewsletters handles GET /newsletters/{newsletterId}
 func (s *Server) GetNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.GetNewsletterByID(w, r)
 }
 
+// PutNewslettersNewsletterId handles PUT /newsletters/{newsletterId}
 func (s *Server) PutNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.newsletterHandler.PutNewsletters(w, r)
 }
 
 func (s *Server) GetNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {

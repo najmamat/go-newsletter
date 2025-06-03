@@ -50,10 +50,12 @@ func main() {
 
 	// Initialize dependencies using dependency injection
 	profileRepo := repository.NewProfileRepository(dbpool, logger)
+	newsletterRepo := repository.NewNewsletterRepository(dbpool, logger)
+	newsletterService := services.NewNewsletterService(newsletterRepo, logger)
 	profileService := services.NewProfileService(profileRepo, logger)
 	authService := services.NewAuthService(cfg.Supabase.JWTSecret, logger)
 	mailingService := services.NewMailingService(&cfg.Resend, logger)
-	apiServer := server.NewServer(profileService, authService, cfg, logger, mailingService)
+	apiServer := server.NewServer(profileService, authService, cfg, logger, mailingService, newsletterService)
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)
