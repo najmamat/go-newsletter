@@ -1,14 +1,11 @@
 package handlers
 
 import (
-	"errors"
-	"go-newsletter/internal/utils"
-	"net/http"
-
-	"go-newsletter/internal/services"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"go-newsletter/internal/services"
+	"go-newsletter/internal/utils"
+	"net/http"
 )
 
 type PostHandler struct {
@@ -42,14 +39,7 @@ func (h *PostHandler) GetPostsByNewsletterId(w http.ResponseWriter, r *http.Requ
 	// Get posts
 	posts, err := h.postService.GetPostsByNewsletterId(r.Context(), newsletterID, user.UserID.String(), published)
 	if err != nil {
-		switch {
-		case errors.Is(err, services.ErrNotFound):
-			http.Error(w, "Posts not found", http.StatusNotFound)
-		case errors.Is(err, services.ErrForbidden):
-			http.Error(w, "You don't have permission to access these posts", http.StatusForbidden)
-		default:
-			http.Error(w, "Failed to list posts", http.StatusInternalServerError)
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -78,14 +68,7 @@ func (h *PostHandler) GetPostById(w http.ResponseWriter, r *http.Request) {
 
 	post, err := h.postService.GetPostById(r.Context(), newsletterID, postId, user.UserID.String())
 	if err != nil {
-		switch {
-		case errors.Is(err, services.ErrNotFound):
-			http.Error(w, "Post not found", http.StatusNotFound)
-		case errors.Is(err, services.ErrForbidden):
-			http.Error(w, "You don't have permission to access this post", http.StatusForbidden)
-		default:
-			http.Error(w, "Failed to list post", http.StatusInternalServerError)
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -114,14 +97,7 @@ func (h *PostHandler) DeletePostById(w http.ResponseWriter, r *http.Request) {
 
 	err = h.postService.DeletePostById(r.Context(), newsletterID, postId, user.UserID.String())
 	if err != nil {
-		switch {
-		case errors.Is(err, services.ErrNotFound):
-			http.Error(w, "Posts not found", http.StatusNotFound)
-		case errors.Is(err, services.ErrForbidden):
-			http.Error(w, "You don't have permission to access these posts", http.StatusForbidden)
-		default:
-			http.Error(w, "Failed to list posts", http.StatusInternalServerError)
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
