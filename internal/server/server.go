@@ -25,18 +25,17 @@ type Server struct {
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService, subscriberService *services.SubscriberService, postService *services.PostService) *Server {
+func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService, subscriberService *services.SubscriberService, postService *services.PostService, responder *utils.HTTPResponder) *Server {
 	return &Server{
+		logger:            logger,
 		profileHandler:    handlers.NewProfileHandler(profileService, authService, logger),
 		authHandler:       handlers.NewAuthHandler(authService, logger),
 		authService:       authService,
 		mailingService:    mailingService,
 		postService:       postService,
-		newsletterHandler: handlers.NewNewsletterHandler(newsletterService, profileService, logger),
+		newsletterHandler: handlers.NewNewsletterHandler(newsletterService, profileService, responder),
 		subscriberHandler: handlers.NewSubscriberHandler(subscriberService),
-		postHandler:       handlers.NewPostHandler(postService),
-		responder:         utils.NewHTTPResponder(logger),
-		logger:            logger,
+		postHandler:       handlers.NewPostHandler(postService, responder),
 	}
 }
 
@@ -132,11 +131,11 @@ func (s *Server) GetNewslettersNewsletterIdScheduledPosts(w http.ResponseWriter,
 }
 
 func (s *Server) DeleteNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.DeletePostById(w, r)
 }
 
 func (s *Server) GetNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.GetPostById(w, r)
 }
 
 func (s *Server) PutNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {

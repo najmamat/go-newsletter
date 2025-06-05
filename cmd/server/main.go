@@ -59,7 +59,8 @@ func main() {
 	subscriberService := services.NewSubscriberService(subscriberRepo, newsletterService, mailingService, cfg, logger)
 	postRepo := repository.NewPostRepository(dbpool, logger)
 	postService := services.NewPostService(postRepo, newsletterService, subscriberService, logger)
-	apiServer := server.NewServer(profileService, authService, logger, mailingService, newsletterService, subscriberService, postService)
+	responder := utils.NewHTTPResponder(logger)
+	apiServer := server.NewServer(profileService, authService, logger, mailingService, newsletterService, subscriberService, postService, responder)
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)
