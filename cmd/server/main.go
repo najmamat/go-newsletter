@@ -57,7 +57,9 @@ func main() {
 	authService := services.NewAuthService(cfg.Supabase.JWTSecret, logger)
 	mailingService := services.NewMailingService(&cfg.Resend, logger)
 	subscriberService := services.NewSubscriberService(subscriberRepo, newsletterRepo, mailingService, cfg, logger)
-	apiServer := server.NewServer(profileService, authService, logger, mailingService, newsletterService, subscriberService)
+	postRepo := repository.NewPostRepository(dbpool, logger)
+	postService := services.NewPostService(postRepo, newsletterService, subscriberService, logger)
+	apiServer := server.NewServer(profileService, authService, logger, mailingService, newsletterService, subscriberService, postService)
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)

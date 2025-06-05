@@ -16,21 +16,25 @@ type Server struct {
 	authHandler       *handlers.AuthHandler
 	authService       *services.AuthService
 	mailingService    *services.MailingService
+	postService       *services.PostService
 	newsletterHandler *handlers.NewsletterHandler
 	subscriberHandler *handlers.SubscriberHandler
+	postHandler       *handlers.PostHandler
 	responder         *utils.HTTPResponder
 	logger            *slog.Logger // Keep logger for non-HTTP operations
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService, subscriberService *services.SubscriberService) *Server {
+func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService, subscriberService *services.SubscriberService, postService *services.PostService) *Server {
 	return &Server{
 		profileHandler:    handlers.NewProfileHandler(profileService, authService, logger),
 		authHandler:       handlers.NewAuthHandler(authService, logger),
 		authService:       authService,
 		mailingService:    mailingService,
+		postService:       postService,
 		newsletterHandler: handlers.NewNewsletterHandler(newsletterService, profileService, logger),
 		subscriberHandler: handlers.NewSubscriberHandler(subscriberService),
+		postHandler:       handlers.NewPostHandler(postService),
 		responder:         utils.NewHTTPResponder(logger),
 		logger:            logger,
 	}
@@ -114,7 +118,7 @@ func (s *Server) PutNewslettersNewsletterId(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) GetNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.ListPosts(w, r)
 }
 
 func (s *Server) PostNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {
