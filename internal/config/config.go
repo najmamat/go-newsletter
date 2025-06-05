@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"go-newsletter/internal/utils"
-
 )
 
 // Config holds all configuration for the application
@@ -19,6 +18,7 @@ type Config struct {
 
 // ServerConfig holds server-related configuration
 type ServerConfig struct {
+	APIBaseURL string
 	Port         string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
@@ -58,6 +58,7 @@ func Load() *Config {
 
 	return &Config{
 		Server: ServerConfig{
+			APIBaseURL: utils.GetEnvWithDefault("API_BASE_URL", "http://localhost:8080"),
 			Port:         utils.GetEnvWithDefault("PORT", "8080"),
 			ReadTimeout:  utils.GetDurationWithDefault("READ_TIMEOUT", 15*time.Second),
 			WriteTimeout: utils.GetDurationWithDefault("WRITE_TIMEOUT", 15*time.Second),

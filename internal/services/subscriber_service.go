@@ -3,8 +3,10 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
+	"go-newsletter/internal/config"
 	"go-newsletter/internal/repository"
 	"go-newsletter/pkg/generated"
 
@@ -22,17 +24,23 @@ var (
 type SubscriberService struct {
 	subscriberRepo *repository.SubscriberRepository
 	newsletterRepo *repository.NewsletterRepository
+	mailingService *MailingService
 	logger         *slog.Logger
+	config         *config.Config
 }
 
 func NewSubscriberService(
 	subscriberRepo *repository.SubscriberRepository,
 	newsletterRepo *repository.NewsletterRepository,
+	mailingService *MailingService,
+	config *config.Config,
 	logger *slog.Logger,
 ) *SubscriberService {
 	return &SubscriberService{
 		subscriberRepo: subscriberRepo,
 		newsletterRepo: newsletterRepo,
+		mailingService: mailingService,
+		config:         config,
 		logger:         logger,
 	}
 }
@@ -74,7 +82,7 @@ func (s *SubscriberService) Subscribe(
 	email openapi_types.Email,
 ) (*generated.Subscriber, error) {
 	// Check if newsletter exists
-	_, err := s.newsletterRepo.GetByID(ctx, newsletterID.String())
+	newsletter, err := s.newsletterRepo.GetByID(ctx, newsletterID.String())
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, ErrNotFound
@@ -100,7 +108,19 @@ func (s *SubscriberService) Subscribe(
 		return nil, err
 	}
 
-	// TODO: Send confirmation email
+	// Send confirmation email
+	confirmationLink := fmt.Sprintf("%s/api/v1/subscribe/confirm/%s", s.config.Server.APIBaseURL, *subscriber.ConfirmationToken)
+	htmlContent := fmt.Sprintf(`
+		<h1>Confirm Your Subscription to %s</h1>
+		<p>Thank you for subscribing to our newsletter! Please click the link below to confirm your subscription:</p>
+		<p><a href="%s">Confirm Subscription</a></p>
+		<p>If you did not request this subscription, you can safely ignore this email.</p>
+	`, newsletter.Name, confirmationLink)
+
+	err = s.mailingService.SendMail([]string{string(email)}, "Confirm Your Newsletter Subscription", htmlContent)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to send confirmation email", "error", err)
+	}
 
 	return subscriber, nil
 }
