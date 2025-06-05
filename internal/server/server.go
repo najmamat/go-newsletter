@@ -18,18 +18,20 @@ type Server struct {
 	authService       *services.AuthService
 	mailingService    *services.MailingService
 	newsletterHandler *handlers.NewsletterHandler
+	subscriberHandler *handlers.SubscriberHandler
 	responder         *utils.HTTPResponder
 	logger            *slog.Logger // Keep logger for non-HTTP operations
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, authService *services.AuthService, cfg *config.Config, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService) *Server {
+func NewServer(profileService *services.ProfileService, authService *services.AuthService, cfg *config.Config, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService, subscriberService *services.SubscriberService) *Server {
 	return &Server{
 		profileHandler:    handlers.NewProfileHandler(profileService, authService, logger),
 		authHandler:       handlers.NewAuthHandler(authService, logger),
 		authService:       authService,
 		mailingService:    mailingService,
 		newsletterHandler: handlers.NewNewsletterHandler(newsletterService, profileService, logger),
+		subscriberHandler: handlers.NewSubscriberHandler(subscriberService),
 		responder:         utils.NewHTTPResponder(logger),
 		logger:            logger,
 	}
@@ -149,7 +151,7 @@ func (s *Server) GetNewslettersNewsletterIdConfirmSubscription(w http.ResponseWr
 }
 
 func (s *Server) GetNewslettersNewsletterIdSubscribers(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.subscriberHandler.ListSubscribers(w, r)
 }
 
 func (s *Server) GetSubscribeConfirmConfirmationToken(w http.ResponseWriter, r *http.Request, confirmationToken string) {
