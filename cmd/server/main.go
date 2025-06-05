@@ -163,6 +163,18 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 			// Assuming token is a query param, not a UUID path param here
 			r.Get("/", apiServer.GetNewslettersNewsletterIdConfirmSubscription)
 		})
+		r.Route("/subscribe/confirm/{confirmationToken}", func(r chi.Router) {
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+				token := chi.URLParam(r, "confirmationToken")
+				apiServer.GetSubscribeConfirmConfirmationToken(w, r, token)
+			})
+		})
+		r.Route("/unsubscribe/{unsubscribeToken}", func(r chi.Router) {
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+				token := chi.URLParam(r, "unsubscribeToken")
+				apiServer.GetUnsubscribeUnsubscribeToken(w, r, token)
+			})
+		})
 	})
 
 	// Protected routes (require authentication, any editor)

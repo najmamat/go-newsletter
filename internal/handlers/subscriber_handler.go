@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"go-newsletter/internal/services"
@@ -98,4 +99,27 @@ func (h *SubscriberHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		return
 	}
+}
+
+// ConfirmSubscription handles the confirmation of a subscription using a token
+func (h *SubscriberHandler) ConfirmSubscription(w http.ResponseWriter, r *http.Request, confirmationToken string) {
+	err := h.subscriberService.ConfirmSubscription(r.Context(), confirmationToken)
+	if err != nil {
+		if errors.Is(err, services.ErrNotFound) {
+			http.Error(w, "Invalid or expired confirmation token", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to confirm subscription", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: "Subscription confirmed successfully",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 } 

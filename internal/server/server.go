@@ -155,7 +155,7 @@ func (s *Server) GetNewslettersNewsletterIdSubscribers(w http.ResponseWriter, r 
 }
 
 func (s *Server) GetSubscribeConfirmConfirmationToken(w http.ResponseWriter, r *http.Request, confirmationToken string) {
-	s.notImplemented(w, r)
+	s.subscriberHandler.ConfirmSubscription(w, r, confirmationToken)
 }
 
 func (s *Server) GetUnsubscribeUnsubscribeToken(w http.ResponseWriter, r *http.Request, unsubscribeToken string) {

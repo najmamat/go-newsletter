@@ -90,19 +90,22 @@ func (r *SubscriberRepository) ExistsByEmail(ctx context.Context, newsletterID u
 // Create adds a new subscriber to a newsletter
 func (r *SubscriberRepository) Create(ctx context.Context, newsletterID uuid.UUID, email string) (*generated.Subscriber, error) {
 	query := `
-		INSERT INTO subscribers (id, newsletter_id, email, subscribed_at, is_confirmed, unsubscribe_token)
-		VALUES ($1, $2, $3, $4, false, $5)
-		RETURNING id, newsletter_id, email, subscribed_at, is_confirmed, unsubscribe_token
+		INSERT INTO subscribers (id, newsletter_id, email, subscribed_at, is_confirmed, unsubscribe_token, confirmation_token)
+		VALUES ($1, $2, $3, $4, false, $5, $6)
+		RETURNING id, newsletter_id, email, subscribed_at, is_confirmed, unsubscribe_token, confirmation_token
 	`
 
 	unsubscribeToken := uuid.New().String()
-
+	confirmationToken := uuid.New().String()
+	
 	subscriber := &generated.Subscriber{
 		Id:            &uuid.UUID{},
 		NewsletterId:  &newsletterID,
 		Email:         openapi_types.Email(email),
 		SubscribedAt:  &time.Time{},
 		IsConfirmed:   new(bool),
+		UnsubscribeToken: &unsubscribeToken,
+		ConfirmationToken: &confirmationToken,
 	}
 
 	err := r.db.QueryRow(
@@ -113,6 +116,7 @@ func (r *SubscriberRepository) Create(ctx context.Context, newsletterID uuid.UUI
 		email,
 		time.Now().UTC(),
 		unsubscribeToken,
+		confirmationToken,
 	).Scan(
 		&subscriber.Id,
 		&subscriber.NewsletterId,
@@ -120,6 +124,7 @@ func (r *SubscriberRepository) Create(ctx context.Context, newsletterID uuid.UUI
 		&subscriber.SubscribedAt,
 		&subscriber.IsConfirmed,
 		&subscriber.UnsubscribeToken,
+		&subscriber.ConfirmationToken,
 	)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "Failed to create subscriber", "error", err)
@@ -127,4 +132,23 @@ func (r *SubscriberRepository) Create(ctx context.Context, newsletterID uuid.UUI
 	}
 
 	return subscriber, nil
+}
+
+// ConfirmByToken confirms a subscription using a confirmation token
+func (r *SubscriberRepository) ConfirmByToken(ctx context.Context, token string) error {
+	query := `
+		UPDATE subscribers
+		SET is_confirmed = true
+		WHERE confirmation_token = $1
+		RETURNING id
+	`
+
+	var id uuid.UUID
+	err := r.db.QueryRow(ctx, query, token).Scan(&id)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to confirm subscription", "error", err)
+		return err
+	}
+
+	return nil
 }
