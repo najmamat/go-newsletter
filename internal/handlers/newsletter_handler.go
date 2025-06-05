@@ -55,7 +55,7 @@ func (h *NewsletterHandler) GetNewsletterByID(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	newsletter, err := h.service.GetNewsletterByID(r.Context(), newsletterID, user.UserID.String())
+	newsletter, err := h.service.GetNewsletterByIDCheckOwnership(r.Context(), newsletterID, user.UserID.String())
 	if err != nil {
 		h.responder.HandleError(w, r, err)
 		return

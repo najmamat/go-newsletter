@@ -22,26 +22,26 @@ var (
 )
 
 type SubscriberService struct {
-	subscriberRepo *repository.SubscriberRepository
-	newsletterRepo *repository.NewsletterRepository
-	mailingService *MailingService
-	logger         *slog.Logger
-	config         *config.Config
+	subscriberRepo    *repository.SubscriberRepository
+	newsletterService *NewsletterService
+	mailingService    *MailingService
+	logger            *slog.Logger
+	config            *config.Config
 }
 
 func NewSubscriberService(
 	subscriberRepo *repository.SubscriberRepository,
-	newsletterRepo *repository.NewsletterRepository,
+	newsletterService *NewsletterService,
 	mailingService *MailingService,
 	config *config.Config,
 	logger *slog.Logger,
 ) *SubscriberService {
 	return &SubscriberService{
-		subscriberRepo: subscriberRepo,
-		newsletterRepo: newsletterRepo,
-		mailingService: mailingService,
-		config:         config,
-		logger:         logger,
+		subscriberRepo:    subscriberRepo,
+		newsletterService: newsletterService,
+		mailingService:    mailingService,
+		config:            config,
+		logger:            logger,
 	}
 }
 
@@ -52,17 +52,13 @@ func (s *SubscriberService) ListSubscribers(
 	editorID string,
 ) ([]*generated.Subscriber, error) {
 	// Verify newsletter ownership
-	newsletter, err := s.newsletterRepo.GetByID(ctx, newsletterID.String())
+	_, err := s.newsletterService.GetNewsletterByIDCheckOwnership(ctx, newsletterID.String(), editorID)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, ErrNotFound
 		}
 		s.logger.ErrorContext(ctx, "Failed to get newsletter", "error", err)
 		return nil, err
-	}
-
-	if newsletter.EditorId.String() != editorID {
-		return nil, ErrForbidden
 	}
 
 	// Get subscribers
@@ -82,7 +78,7 @@ func (s *SubscriberService) Subscribe(
 	email openapi_types.Email,
 ) (*generated.Subscriber, error) {
 	// Check if newsletter exists
-	newsletter, err := s.newsletterRepo.GetByID(ctx, newsletterID.String())
+	newsletter, err := s.newsletterService.GetNewsletterByID(ctx, newsletterID.String())
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, ErrNotFound

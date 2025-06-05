@@ -108,7 +108,8 @@ func (s *NewsletterService) GetNewslettersOwnedByEditor(ctx context.Context, edi
 	return newsletters, nil
 }
 
-func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterID string, editorID string) (*generated.Newsletter, error) {
+// GetNewsletterByIDCheckOwnership returns the newsletter if the user is authorized for it
+func (s *NewsletterService) GetNewsletterByIDCheckOwnership(ctx context.Context, newsletterID string, editorID string) (*generated.Newsletter, error) {
 	// Validate input
 	if err := s.validateNewsletterID(newsletterID); err != nil {
 		return nil, err
@@ -121,6 +122,22 @@ func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterID 
 	}
 
 	if err := s.checkNewsletterOwnership(ctx, newsletter, editorID); err != nil {
+		return nil, err
+	}
+
+	return newsletter, nil
+}
+
+// GetNewsletterByID returns the newsletter by ID without checking for ownership
+func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterID string) (*generated.Newsletter, error) {
+	// Validate input
+	if err := s.validateNewsletterID(newsletterID); err != nil {
+		return nil, err
+	}
+
+	newsletter, err := s.repo.GetByID(ctx, newsletterID)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "SERVICE: failed to get newsletter by ID", "error", err)
 		return nil, err
 	}
 

@@ -39,7 +39,7 @@ func (s *PostService) ListPosts(
 	editorID string,
 ) ([]*generated.PublishedPost, error) {
 	// validate newsletter ownership
-	_, err := s.newsletterService.GetNewsletterByID(ctx, newsletterID.String(), editorID)
+	_, err := s.newsletterService.GetNewsletterByIDCheckOwnership(ctx, newsletterID.String(), editorID)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, ErrNotFound
