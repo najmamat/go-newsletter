@@ -139,7 +139,7 @@ func (s *Server) PutNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseW
 }
 
 func (s *Server) PostNewslettersNewsletterIdSubscribe(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.subscriberHandler.Subscribe(w, r)
 }
 
 func (s *Server) PostNewslettersNewsletterIdUnsubscribe(w http.ResponseWriter, r *http.Request) {

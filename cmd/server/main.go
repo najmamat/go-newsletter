@@ -56,7 +56,7 @@ func main() {
 	profileService := services.NewProfileService(profileRepo, logger)
 	authService := services.NewAuthService(cfg.Supabase.JWTSecret, logger)
 	mailingService := services.NewMailingService(&cfg.Resend, logger)
-	subscriberService := services.NewSubscriberService(newsletterRepo, subscriberRepo, logger)
+	subscriberService := services.NewSubscriberService(subscriberRepo, newsletterRepo, logger)
 	apiServer := server.NewServer(profileService, authService, cfg, logger, mailingService, newsletterService, subscriberService)
 
 	// Initialize router and middleware

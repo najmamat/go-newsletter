@@ -8,28 +8,31 @@ import (
 	"go-newsletter/internal/repository"
 	"go-newsletter/pkg/generated"
 
+	openapi_types "github.com/oapi-codegen/runtime/types"
+
 	"github.com/google/uuid"
 )
 
 var (
-	ErrNotFound  = errors.New("not found")
-	ErrForbidden = errors.New("forbidden")
+	ErrNotFound         = errors.New("not found")
+	ErrForbidden        = errors.New("forbidden")
+	ErrAlreadySubscribed = errors.New("already subscribed")
 )
 
 type SubscriberService struct {
-	newsletterRepo *repository.NewsletterRepository
 	subscriberRepo *repository.SubscriberRepository
+	newsletterRepo *repository.NewsletterRepository
 	logger         *slog.Logger
 }
 
 func NewSubscriberService(
-	newsletterRepo *repository.NewsletterRepository,
 	subscriberRepo *repository.SubscriberRepository,
+	newsletterRepo *repository.NewsletterRepository,
 	logger *slog.Logger,
 ) *SubscriberService {
 	return &SubscriberService{
-		newsletterRepo: newsletterRepo,
 		subscriberRepo: subscriberRepo,
+		newsletterRepo: newsletterRepo,
 		logger:         logger,
 	}
 }
@@ -39,7 +42,7 @@ func (s *SubscriberService) ListSubscribers(
 	ctx context.Context,
 	newsletterID uuid.UUID,
 	editorID string,
-) ([]generated.Subscriber, error) {
+) ([]*generated.Subscriber, error) {
 	// Verify newsletter ownership
 	newsletter, err := s.newsletterRepo.GetByID(ctx, newsletterID.String())
 	if err != nil {
@@ -61,9 +64,43 @@ func (s *SubscriberService) ListSubscribers(
 		return nil, err
 	}
 
-	var result []generated.Subscriber
-	for _, s := range subscribers {
-		result = append(result, *s)
+	return subscribers, nil
+}
+
+// Subscribe adds a new subscriber to a newsletter
+func (s *SubscriberService) Subscribe(
+	ctx context.Context,
+	newsletterID uuid.UUID,
+	email openapi_types.Email,
+) (*generated.Subscriber, error) {
+	// Check if newsletter exists
+	_, err := s.newsletterRepo.GetByID(ctx, newsletterID.String())
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		s.logger.ErrorContext(ctx, "Failed to get newsletter", "error", err)
+		return nil, err
 	}
-	return result, nil
+
+	// Check if already subscribed
+	exists, err := s.subscriberRepo.ExistsByEmail(ctx, newsletterID, string(email))
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to check subscription", "error", err)
+		return nil, err
+	}
+	if exists {
+		return nil, ErrAlreadySubscribed
+	}
+
+	// Create subscriber
+	subscriber, err := s.subscriberRepo.Create(ctx, newsletterID, string(email))
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to create subscriber", "error", err)
+		return nil, err
+	}
+
+	// TODO: Send confirmation email
+
+	return subscriber, nil
 }
