@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
+	"go-newsletter/internal/utils"
 	"net/http"
 
 	"go-newsletter/internal/services"
@@ -13,11 +13,13 @@ import (
 
 type PostHandler struct {
 	postService *services.PostService
+	responder   *utils.HTTPResponder
 }
 
-func NewPostHandler(postService *services.PostService) *PostHandler {
+func NewPostHandler(postService *services.PostService, responder *utils.HTTPResponder) *PostHandler {
 	return &PostHandler{
 		postService: postService,
+		responder:   responder,
 	}
 }
 
@@ -42,22 +44,86 @@ func (h *PostHandler) GetPostsByNewsletterId(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrNotFound):
-			http.Error(w, "Newsletter not found", http.StatusNotFound)
+			http.Error(w, "Posts not found", http.StatusNotFound)
 		case errors.Is(err, services.ErrForbidden):
-			http.Error(w, "You don't have permission to access this newsletter", http.StatusForbidden)
+			http.Error(w, "You don't have permission to access these posts", http.StatusForbidden)
 		default:
 			http.Error(w, "Failed to list posts", http.StatusInternalServerError)
 		}
 		return
 	}
 
-	response := map[string]interface{}{
-		"posts": posts,
-	}
+	h.responder.RespondJSON(w, http.StatusOK, posts)
+}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+func (h *PostHandler) GetPostById(w http.ResponseWriter, r *http.Request) {
+	newsletterID, err := uuid.Parse(chi.URLParam(r, "newsletterId"))
+	if err != nil {
+		http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
 		return
 	}
+
+	postId, err := uuid.Parse(chi.URLParam(r, "postId"))
+	if err != nil {
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get user from context
+	user, ok := services.GetUserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	post, err := h.postService.GetPostById(r.Context(), newsletterID, postId, user.UserID.String())
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrNotFound):
+			http.Error(w, "Post not found", http.StatusNotFound)
+		case errors.Is(err, services.ErrForbidden):
+			http.Error(w, "You don't have permission to access this post", http.StatusForbidden)
+		default:
+			http.Error(w, "Failed to list post", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	h.responder.RespondJSON(w, http.StatusOK, post)
+}
+
+func (h *PostHandler) DeletePostById(w http.ResponseWriter, r *http.Request) {
+	newsletterID, err := uuid.Parse(chi.URLParam(r, "newsletterId"))
+	if err != nil {
+		http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
+		return
+	}
+
+	postId, err := uuid.Parse(chi.URLParam(r, "postId"))
+	if err != nil {
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get user from context
+	user, ok := services.GetUserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	err = h.postService.DeletePostById(r.Context(), newsletterID, postId, user.UserID.String())
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrNotFound):
+			http.Error(w, "Posts not found", http.StatusNotFound)
+		case errors.Is(err, services.ErrForbidden):
+			http.Error(w, "You don't have permission to access these posts", http.StatusForbidden)
+		default:
+			http.Error(w, "Failed to list posts", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	h.responder.RespondJSON(w, http.StatusOK, nil)
 }

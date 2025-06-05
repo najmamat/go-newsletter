@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"go-newsletter/internal/models"
 	"log/slog"
 
 	"go-newsletter/pkg/generated"
@@ -69,4 +70,53 @@ func (r *PostRepository) GetPostsByNewsletterId(ctx context.Context, newsletterI
 	}
 
 	return posts, nil
+}
+
+func (r *PostRepository) GetPostById(ctx context.Context, postId uuid.UUID) (*generated.PublishedPost, error) {
+	query := `
+		SELECT id, newsletter_id, editor_id, title, content_html, content_text, status, scheduled_at, published_at, created_at
+		FROM published_posts
+		WHERE id = $1`
+
+	post := &generated.PublishedPost{}
+	err := r.db.QueryRow(ctx, query, postId).Scan(
+		&post.Id,
+		&post.NewsletterId,
+		&post.EditorId,
+		&post.Title,
+		&post.ContentHtml,
+		&post.ContentText,
+		&post.Status,
+		&post.ScheduledAt,
+		&post.PublishedAt,
+		&post.CreatedAt,
+	)
+
+	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to query post", "error", err)
+		return nil, err
+	}
+
+	return post, nil
+}
+
+func (r *PostRepository) DeletePostById(ctx context.Context, postId uuid.UUID) error {
+	query := `
+		DELETE
+		FROM published_posts
+		WHERE id = $1`
+
+	result, err := r.db.Exec(ctx, query, postId)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "REPO: failed to delete post", "id", postId, "error", err)
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		r.logger.ErrorContext(ctx, "REPO: Post not found for deletion", "id", postId)
+		return models.NewNotFoundError("Post not found")
+	}
+
+	return nil
 }

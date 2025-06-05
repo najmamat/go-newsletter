@@ -57,3 +57,43 @@ func (s *PostService) GetPostsByNewsletterId(
 
 	return posts, nil
 }
+
+func (s *PostService) GetPostById(ctx context.Context, newsletterID uuid.UUID, postId uuid.UUID, editorID string) (*generated.PublishedPost, error) {
+	// validate newsletter ownership
+	_, err := s.newsletterService.GetNewsletterByIDCheckOwnership(ctx, newsletterID.String(), editorID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		s.logger.ErrorContext(ctx, "Failed to get newsletter", "error", err)
+		return nil, err
+	}
+
+	post, err := s.postRepo.GetPostById(ctx, postId)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to list post", "error", err)
+		return nil, err
+	}
+
+	return post, nil
+}
+
+func (s *PostService) DeletePostById(ctx context.Context, newsletterID uuid.UUID, postId uuid.UUID, editorID string) error {
+	// validate newsletter ownership
+	_, err := s.newsletterService.GetNewsletterByIDCheckOwnership(ctx, newsletterID.String(), editorID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return ErrNotFound
+		}
+		s.logger.ErrorContext(ctx, "Failed to get newsletter", "error", err)
+		return err
+	}
+
+	err = s.postRepo.DeletePostById(ctx, postId)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to delete post", "error", err)
+		return err
+	}
+
+	return nil
+}
