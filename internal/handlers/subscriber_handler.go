@@ -122,4 +122,27 @@ func (h *SubscriberHandler) ConfirmSubscription(w http.ResponseWriter, r *http.R
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}
+
+// Unsubscribe handles the unsubscription using a token
+func (h *SubscriberHandler) Unsubscribe(w http.ResponseWriter, r *http.Request, unsubscribeToken string) {
+	err := h.subscriberService.Unsubscribe(r.Context(), unsubscribeToken)
+	if err != nil {
+		if errors.Is(err, services.ErrNotFound) {
+			http.Error(w, "Invalid or expired unsubscribe token", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to unsubscribe", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: "Successfully unsubscribed from the newsletter",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 } 

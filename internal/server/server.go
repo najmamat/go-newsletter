@@ -159,7 +159,7 @@ func (s *Server) GetSubscribeConfirmConfirmationToken(w http.ResponseWriter, r *
 }
 
 func (s *Server) GetUnsubscribeUnsubscribeToken(w http.ResponseWriter, r *http.Request, unsubscribeToken string) {
-	s.notImplemented(w, r)
+	s.subscriberHandler.Unsubscribe(w, r, unsubscribeToken)
 }
 
 func (s *Server) notImplemented(w http.ResponseWriter, r *http.Request) {

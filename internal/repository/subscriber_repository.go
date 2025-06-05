@@ -9,6 +9,7 @@ import (
 	"go-newsletter/pkg/generated"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
@@ -147,6 +148,28 @@ func (r *SubscriberRepository) ConfirmByToken(ctx context.Context, token string)
 	err := r.db.QueryRow(ctx, query, token).Scan(&id)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "Failed to confirm subscription", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+// UnsubscribeByToken unsubscribes a user using their unsubscribe token
+func (r *SubscriberRepository) UnsubscribeByToken(ctx context.Context, token string) error {
+	query := `
+		UPDATE subscribers
+		SET unsubscribed_at = NOW()
+		WHERE unsubscribe_token = $1 AND unsubscribed_at IS NULL
+		RETURNING id
+	`
+
+	var id uuid.UUID
+	err := r.db.QueryRow(ctx, query, token).Scan(&id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return ErrNotFound
+		}
+		r.logger.ErrorContext(ctx, "Failed to unsubscribe", "error", err)
 		return err
 	}
 

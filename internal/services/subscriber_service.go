@@ -136,3 +136,15 @@ func (s *SubscriberService) ConfirmSubscription(ctx context.Context, token strin
 	}
 	return nil
 }
+
+// Unsubscribe handles unsubscription using a token
+func (s *SubscriberService) Unsubscribe(ctx context.Context, token string) error {
+	err := s.subscriberRepo.UnsubscribeByToken(ctx, token)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return nil
+}
