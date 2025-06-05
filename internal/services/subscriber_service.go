@@ -104,3 +104,15 @@ func (s *SubscriberService) Subscribe(
 
 	return subscriber, nil
 }
+
+// ConfirmSubscription confirms a subscription using a confirmation token
+func (s *SubscriberService) ConfirmSubscription(ctx context.Context, token string) error {
+	err := s.subscriberRepo.ConfirmByToken(ctx, token)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return nil
+}
