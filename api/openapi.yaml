@@ -944,7 +944,7 @@ components:
           description: Plain text version of the post content.
         status:
           type: string
-          description: 'Status of the post (e.g., 'draft', 'scheduled', 'publishing', 'published', 'failed')'
+          description: Status of the post (e.g., draft, scheduled, publishing, published, failed)
           readOnly: true # Typically set by the backend
         scheduled_at:
           type: string
