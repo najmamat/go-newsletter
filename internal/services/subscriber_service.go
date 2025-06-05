@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	ErrNotFound         = errors.New("not found")
-	ErrForbidden        = errors.New("forbidden")
+	ErrNotFound          = errors.New("not found")
+	ErrForbidden         = errors.New("forbidden")
 	ErrAlreadySubscribed = errors.New("already subscribed")
 )
 
@@ -109,7 +109,7 @@ func (s *SubscriberService) Subscribe(
 	}
 
 	// Send confirmation email
-	confirmationLink := fmt.Sprintf("%s/api/v1/subscribe/confirm/%s", s.config.Server.APIBaseURL, *subscriber.ConfirmationToken)
+	confirmationLink := fmt.Sprintf("%s/subscribe/confirm/%s", s.config.BuildApiBaseUrl(), *subscriber.ConfirmationToken)
 	htmlContent := fmt.Sprintf(`
 		<h1>Confirm Your Subscription to %s</h1>
 		<p>Thank you for subscribing to our newsletter! Please click the link below to confirm your subscription:</p>
