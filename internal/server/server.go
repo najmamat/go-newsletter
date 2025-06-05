@@ -34,7 +34,7 @@ func NewServer(profileService *services.ProfileService, authService *services.Au
 		mailingService:    mailingService,
 		postService:       postService,
 		newsletterHandler: handlers.NewNewsletterHandler(newsletterService, profileService, responder),
-		subscriberHandler: handlers.NewSubscriberHandler(subscriberService),
+		subscriberHandler: handlers.NewSubscriberHandler(subscriberService, responder),
 		postHandler:       handlers.NewPostHandler(postService, responder),
 	}
 }
