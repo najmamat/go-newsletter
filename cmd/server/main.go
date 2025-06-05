@@ -51,11 +51,13 @@ func main() {
 	// Initialize dependencies using dependency injection
 	profileRepo := repository.NewProfileRepository(dbpool, logger)
 	newsletterRepo := repository.NewNewsletterRepository(dbpool, logger)
+	subscriberRepo := repository.NewSubscriberRepository(dbpool, logger)
 	newsletterService := services.NewNewsletterService(newsletterRepo, logger)
 	profileService := services.NewProfileService(profileRepo, logger)
 	authService := services.NewAuthService(cfg.Supabase.JWTSecret, logger)
 	mailingService := services.NewMailingService(&cfg.Resend, logger)
-	apiServer := server.NewServer(profileService, authService, cfg, logger, mailingService, newsletterService)
+	subscriberService := services.NewSubscriberService(newsletterRepo, subscriberRepo, logger)
+	apiServer := server.NewServer(profileService, authService, cfg, logger, mailingService, newsletterService, subscriberService)
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)
@@ -180,6 +182,9 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 			r.Get("/", apiServer.GetNewslettersNewsletterId)
 			r.Put("/", apiServer.PutNewslettersNewsletterId)
 			r.Delete("/", apiServer.DeleteNewslettersNewsletterId)
+
+			// Subscriber management
+			r.Get("/subscribers", apiServer.GetNewslettersNewsletterIdSubscribers)
 
 			// Post management (editor-owned)
 			r.Route("/posts", func(r chi.Router) {
