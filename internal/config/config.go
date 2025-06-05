@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -18,8 +19,9 @@ type Config struct {
 
 // ServerConfig holds server-related configuration
 type ServerConfig struct {
-	APIBaseURL string
+	ApiBaseURL   string
 	Port         string
+	ApiVersion   string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 }
@@ -48,9 +50,13 @@ type LoggingConfig struct {
 
 // SupabaseConfig holds Supabase-related configuration
 type SupabaseConfig struct {
-	URL         string
-	AnonKey  string
-	JWTSecret   string
+	URL       string
+	AnonKey   string
+	JWTSecret string
+}
+
+func (c Config) BuildApiBaseUrl() string {
+	return fmt.Sprintf("%s:%s/api/v%s", c.Server.ApiBaseURL, c.Server.Port, c.Server.ApiVersion)
 }
 
 // Load loads configuration from environment variables
@@ -58,8 +64,9 @@ func Load() *Config {
 
 	return &Config{
 		Server: ServerConfig{
-			APIBaseURL: utils.GetEnvWithDefault("API_BASE_URL", "http://localhost:8080"),
+			ApiBaseURL:   utils.GetEnvWithDefault("API_BASE_URL", "http://localhost"),
 			Port:         utils.GetEnvWithDefault("PORT", "8080"),
+			ApiVersion:   utils.GetEnvWithDefault("API_VERSION", "1"),
 			ReadTimeout:  utils.GetDurationWithDefault("READ_TIMEOUT", 15*time.Second),
 			WriteTimeout: utils.GetDurationWithDefault("WRITE_TIMEOUT", 15*time.Second),
 		},
@@ -77,9 +84,9 @@ func Load() *Config {
 			Level: utils.GetEnvWithDefault("LOG_LEVEL", "info"),
 		},
 		Supabase: SupabaseConfig{
-			URL:         os.Getenv("SUPABASE_URL"),
-			AnonKey:  os.Getenv("SUPABASE_ANON_KEY"),
-			JWTSecret:   os.Getenv("SUPABASE_JWT_SECRET"),
+			URL:       os.Getenv("SUPABASE_URL"),
+			AnonKey:   os.Getenv("SUPABASE_ANON_KEY"),
+			JWTSecret: os.Getenv("SUPABASE_JWT_SECRET"),
 		},
 		Resend: ResendConfig{
 			Sender: os.Getenv("RESEND_SENDER"),

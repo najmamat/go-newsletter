@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"go-newsletter/internal/config"
 	"go-newsletter/internal/handlers"
 	"go-newsletter/internal/services"
 	"go-newsletter/internal/utils"
@@ -24,7 +23,7 @@ type Server struct {
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, authService *services.AuthService, cfg *config.Config, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService, subscriberService *services.SubscriberService) *Server {
+func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService, subscriberService *services.SubscriberService) *Server {
 	return &Server{
 		profileHandler:    handlers.NewProfileHandler(profileService, authService, logger),
 		authHandler:       handlers.NewAuthHandler(authService, logger),
