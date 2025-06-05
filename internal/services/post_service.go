@@ -32,11 +32,12 @@ func NewPostService(
 	}
 }
 
-// ListPosts retrieves a list of published posts for a newsletter
-func (s *PostService) ListPosts(
+// GetPostsByNewsletterId retrieves a list of published posts for a newsletter
+func (s *PostService) GetPostsByNewsletterId(
 	ctx context.Context,
 	newsletterID uuid.UUID,
 	editorID string,
+	published bool,
 ) ([]*generated.PublishedPost, error) {
 	// validate newsletter ownership
 	_, err := s.newsletterService.GetNewsletterByIDCheckOwnership(ctx, newsletterID.String(), editorID)
@@ -48,7 +49,7 @@ func (s *PostService) ListPosts(
 		return nil, err
 	}
 
-	posts, err := s.postRepo.ListByNewsletterID(ctx, newsletterID)
+	posts, err := s.postRepo.GetPostsByNewsletterId(ctx, newsletterID, published)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "Failed to list posts", "error", err)
 		return nil, err

@@ -21,8 +21,9 @@ func NewPostHandler(postService *services.PostService) *PostHandler {
 	}
 }
 
-// ListPosts handles GET /newsletters/{newsletterId}/posts
-func (h *PostHandler) ListPosts(w http.ResponseWriter, r *http.Request) {
+// GetPostsByNewsletterId handles GET /newsletters/{newsletterId}/posts and GET /newsletters/{newsletterId}/published-posts
+// If published is true, only published posts are returned. Otherwise, only scheduled posts are returned.
+func (h *PostHandler) GetPostsByNewsletterId(w http.ResponseWriter, r *http.Request, published bool) {
 	newsletterID, err := uuid.Parse(chi.URLParam(r, "newsletterId"))
 	if err != nil {
 		http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
@@ -37,7 +38,7 @@ func (h *PostHandler) ListPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get posts
-	posts, err := h.postService.ListPosts(r.Context(), newsletterID, user.UserID.String())
+	posts, err := h.postService.GetPostsByNewsletterId(r.Context(), newsletterID, user.UserID.String(), published)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrNotFound):

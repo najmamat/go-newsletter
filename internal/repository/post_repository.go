@@ -22,12 +22,17 @@ func NewPostRepository(db *pgxpool.Pool, logger *slog.Logger) *PostRepository {
 	}
 }
 
-func (r *PostRepository) ListByNewsletterID(ctx context.Context, newsletterID uuid.UUID) ([]*generated.PublishedPost, error) {
+func (r *PostRepository) GetPostsByNewsletterId(ctx context.Context, newsletterID uuid.UUID, published bool) ([]*generated.PublishedPost, error) {
 	query := `
 		SELECT id, newsletter_id, editor_id, title, content_html, content_text, status, scheduled_at, published_at, created_at
 		FROM published_posts
-		WHERE newsletter_id = $1
-	`
+		WHERE newsletter_id = $1`
+
+	if published {
+		query += ` AND published_at IS NOT NULL`
+	} else {
+		query += ` AND published_at IS NULL`
+	}
 
 	rows, err := r.db.Query(ctx, query, newsletterID)
 	if err != nil {

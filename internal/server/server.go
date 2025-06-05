@@ -107,7 +107,7 @@ func (s *Server) DeleteNewslettersNewsletterId(w http.ResponseWriter, r *http.Re
 	s.newsletterHandler.DeleteNewsletter(w, r)
 }
 
-// GetNewsletters handles GET /newsletters/{newsletterId}
+// GetNewslettersNewsletterId handles GET /newsletters/{newsletterId}
 func (s *Server) GetNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
 	s.newsletterHandler.GetNewsletterByID(w, r)
 }
@@ -117,16 +117,18 @@ func (s *Server) PutNewslettersNewsletterId(w http.ResponseWriter, r *http.Reque
 	s.newsletterHandler.PutNewsletters(w, r)
 }
 
+// GetNewslettersNewsletterIdPosts handles GET /newsletters/{newsletterId}/posts and returns only published posts
 func (s *Server) GetNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {
-	s.postHandler.ListPosts(w, r)
+	s.postHandler.GetPostsByNewsletterId(w, r, true)
 }
 
 func (s *Server) PostNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {
 	s.notImplemented(w, r)
 }
 
+// GetNewslettersNewsletterIdScheduledPosts handles GET /newsletters/{newsletterId}/posts and returns only unpublished posts
 func (s *Server) GetNewslettersNewsletterIdScheduledPosts(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.GetPostsByNewsletterId(w, r, false)
 }
 
 func (s *Server) DeleteNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
