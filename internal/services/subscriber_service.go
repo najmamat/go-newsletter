@@ -45,7 +45,7 @@ func NewSubscriberService(
 	}
 }
 
-// ListSubscribers retrieves a list of subscribers for a newsletter
+// ListSubscribers retrieves a list of subscribers for a newsletter, checks if the user is the owner of the newsletter
 func (s *SubscriberService) ListSubscribers(
 	ctx context.Context,
 	newsletterID uuid.UUID,
@@ -60,6 +60,22 @@ func (s *SubscriberService) ListSubscribers(
 		s.logger.ErrorContext(ctx, "Failed to get newsletter", "error", err)
 		return nil, err
 	}
+
+	// Get subscribers
+	subscribers, err := s.subscriberRepo.ListByNewsletterID(ctx, newsletterID)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to list subscribers", "error", err)
+		return nil, err
+	}
+
+	return subscribers, nil
+}
+
+// ListSubscribers retrieves a list of subscribers for a newsletter
+func (s *SubscriberService) ListSubscribersWithouCheck(
+	ctx context.Context,
+	newsletterID uuid.UUID,
+) ([]*generated.Subscriber, error) {
 
 	// Get subscribers
 	subscribers, err := s.subscriberRepo.ListByNewsletterID(ctx, newsletterID)

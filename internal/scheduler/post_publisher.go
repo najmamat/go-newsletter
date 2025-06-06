@@ -62,26 +62,48 @@ func (p *PostPublisher) publishScheduledPosts() {
 	defer cancel()
 	p.logger.InfoContext(ctx, "Checking for scheduled posts to publish")
 
+	now := time.Now()
+	p.logger.InfoContext(ctx, "Current time", "time", now.Format(time.RFC3339))
+
 	// Get all scheduled posts that are due for publication
-	posts, err := p.postService.GetPostsDueForPublication(ctx, time.Now())
+	posts, err := p.postService.GetPostsDueForPublication(ctx, now)
 	if err != nil {
 		p.logger.ErrorContext(ctx, "Error fetching scheduled posts", "error", err)
 		return
 	}
 
 	if len(posts) == 0 {
+		p.logger.InfoContext(ctx, "No posts scheduled for publication at this time")
 		return
 	}
 
 	p.logger.InfoContext(ctx, "Found posts to publish", "count", len(posts))
 
 	// Publish each post
+	successCount := 0
+	failureCount := 0
+
 	for _, post := range posts {
+		if post == nil || post.Id == nil {
+			p.logger.WarnContext(ctx, "Invalid post data received from database")
+			continue
+		}
+
+		p.logger.InfoContext(ctx, "Publishing post",
+			"postId", post.Id,
+			"title", post.Title,
+			"scheduledAt", post.ScheduledAt.Format(time.RFC3339))
+
 		err := p.postService.PublishPost(ctx, *post.Id)
 		if err != nil {
 			p.logger.ErrorContext(ctx, "Error publishing post", "postId", post.Id, "error", err)
+			failureCount++
 			continue
 		}
+
+		successCount++
 		p.logger.InfoContext(ctx, "Post published successfully", "postId", post.Id, "title", post.Title)
 	}
+
+	p.logger.InfoContext(ctx, "Post publishing completed", "successCount", successCount, "failureCount", failureCount)
 }
