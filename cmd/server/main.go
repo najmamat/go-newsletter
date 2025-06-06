@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"go-newsletter/internal/scheduler"
+	// TODO UNCOMMENT THIS - disabled for preserving supabase requests!
+	//"go-newsletter/internal/scheduler"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,7 +14,6 @@ import (
 	"go-newsletter/internal/config"
 	"go-newsletter/internal/middleware"
 	"go-newsletter/internal/repository"
-	"go-newsletter/internal/scheduler"
 	"go-newsletter/internal/server"
 	"go-newsletter/internal/services"
 	"go-newsletter/internal/utils"
@@ -65,8 +65,9 @@ func main() {
 	apiServer := server.NewServer(profileService, authService, logger, mailingService, newsletterService, subscriberService, postService, responder)
 
 	// Initialize and start the scheduled post publisher
-	postPublisher := scheduler.NewPostPublisher(postService, logger.With("component", "postPublisher"))
-	postPublisher.Start()
+	// TODO UNCOMMENT THIS - disabled for preserving supabase requests!
+	// postPublisher := scheduler.NewPostPublisher(postService, logger.With("component", "postPublisher"))
+	// postPublisher.Start()
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)
