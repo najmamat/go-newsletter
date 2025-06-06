@@ -7,6 +7,7 @@ import (
 	"go-newsletter/internal/repository"
 	"log/slog"
 	"strings"
+	"time"
 
 	"go-newsletter/pkg/generated"
 
@@ -162,4 +163,24 @@ func (s *PostService) UpdatePost(ctx context.Context, editorID uuid.UUID, postId
 		return nil, err
 	}
 	return post, nil
+}
+
+// GetPostsDueForPublication returns all scheduled posts that are due for publication
+func (s *PostService) GetPostsDueForPublication(ctx context.Context, currentTime time.Time) ([]*generated.PublishedPost, error) {
+	posts, err := s.postRepo.GetPostsDueForPublication(ctx, currentTime)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to get posts due for publication", "error", err)
+		return nil, err
+	}
+	return posts, nil
+}
+
+// PublishPost updates a post status to published
+func (s *PostService) PublishPost(ctx context.Context, postId uuid.UUID) error {
+	err := s.postRepo.PublishPost(ctx, postId)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to publish post", "postId", postId, "error", err)
+		return err
+	}
+	return nil
 }

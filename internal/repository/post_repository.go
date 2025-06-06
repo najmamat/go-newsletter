@@ -52,8 +52,8 @@ func (r *PostRepository) GetPostsByNewsletterId(ctx context.Context, newsletterI
 			&s.NewsletterId,
 			&s.EditorId,
 			&s.Title,
-			&s.ContentText,
 			&s.ContentHtml,
+			&s.ContentText,
 			&s.Status,
 			&s.ScheduledAt,
 			&s.PublishedAt,
@@ -100,6 +100,77 @@ func (r *PostRepository) GetPostById(ctx context.Context, postId uuid.UUID) (*ge
 	}
 
 	return post, nil
+}
+
+// GetPostsDueForPublication returns all scheduled posts that are due for publication
+func (r *PostRepository) GetPostsDueForPublication(ctx context.Context, currentTime time.Time) ([]*generated.PublishedPost, error) {
+	query := `
+		SELECT id, newsletter_id, editor_id, title, content_html, content_text, status, scheduled_at, published_at, created_at
+		FROM published_posts
+		WHERE status = $1
+		AND scheduled_at <= $2
+		AND published_at IS NULL
+	`
+
+	rows, err := r.db.Query(ctx, query, enums.Scheduled.String(), currentTime)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "Error loading posts for publication", "error", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []*generated.PublishedPost
+	for rows.Next() {
+		s := &generated.PublishedPost{}
+		err := rows.Scan(
+			&s.Id,
+			&s.NewsletterId,
+			&s.EditorId,
+			&s.Title,
+			&s.ContentHtml,
+			&s.ContentText,
+			&s.Status,
+			&s.ScheduledAt,
+			&s.PublishedAt,
+			&s.CreatedAt,
+		)
+		if err != nil {
+			r.logger.ErrorContext(ctx, "Error reading post row", "error", err)
+			return nil, err
+		}
+		posts = append(posts, s)
+	}
+
+	if err = rows.Err(); err != nil {
+		r.logger.ErrorContext(ctx, "Error iterating results", "error", err)
+		return nil, err
+	}
+
+	return posts, nil
+}
+
+// PublishPost updates the status of a post to published
+func (r *PostRepository) PublishPost(ctx context.Context, postId uuid.UUID) error {
+	query := `
+		UPDATE published_posts
+		SET status = $2, published_at = $3
+		WHERE id = $1
+	`
+
+	now := time.Now()
+	result, err := r.db.Exec(ctx, query, postId, enums.Posted.String(), now)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "REPO: error publishing post", "id", postId, "error", err)
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		r.logger.ErrorContext(ctx, "REPO: Post not found for publishing", "id", postId)
+		return models.NewNotFoundError("Post not found")
+	}
+
+	return nil
 }
 
 func (r *PostRepository) DeletePostById(ctx context.Context, postId uuid.UUID) error {

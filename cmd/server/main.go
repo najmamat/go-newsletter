@@ -12,6 +12,7 @@ import (
 	"go-newsletter/internal/config"
 	"go-newsletter/internal/middleware"
 	"go-newsletter/internal/repository"
+	"go-newsletter/internal/scheduler"
 	"go-newsletter/internal/server"
 	"go-newsletter/internal/services"
 	"go-newsletter/internal/utils"
@@ -61,6 +62,10 @@ func main() {
 	postService := services.NewPostService(postRepo, newsletterService, subscriberService, logger)
 	responder := utils.NewHTTPResponder(logger)
 	apiServer := server.NewServer(profileService, authService, logger, mailingService, newsletterService, subscriberService, postService, responder)
+
+	// Initialize and start the scheduled post publisher
+	postPublisher := scheduler.NewPostPublisher(postService, logger.With("component", "postPublisher"))
+	postPublisher.Start()
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)
