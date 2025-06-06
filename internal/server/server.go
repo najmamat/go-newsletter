@@ -122,7 +122,7 @@ func (s *Server) GetNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.
 }
 
 func (s *Server) PostNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.PostPost(w, r)
 }
 
 // GetNewslettersNewsletterIdScheduledPosts handles GET /newsletters/{newsletterId}/posts and returns only unpublished posts
@@ -139,7 +139,7 @@ func (s *Server) GetNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseW
 }
 
 func (s *Server) PutNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.PutPost(w, r)
 }
 
 func (s *Server) PostNewslettersNewsletterIdSubscribe(w http.ResponseWriter, r *http.Request) {

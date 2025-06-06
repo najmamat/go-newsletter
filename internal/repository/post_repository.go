@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"go-newsletter/internal/models"
+	"go-newsletter/internal/models/enums"
 	"log/slog"
+	"time"
 
 	"go-newsletter/pkg/generated"
 
@@ -119,4 +121,111 @@ func (r *PostRepository) DeletePostById(ctx context.Context, postId uuid.UUID) e
 	}
 
 	return nil
+}
+
+func (r *PostRepository) CreatePost(ctx context.Context, userId uuid.UUID, createPost *generated.PublishPostRequest, newsletterId uuid.UUID) (*generated.PublishedPost, error) {
+	query := `
+	INSERT INTO published_posts (id, newsletter_id, editor_id, title, content_html, content_text, status, scheduled_at, published_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		RETURNING id, newsletter_id, editor_id, title, content_html, content_text, status, scheduled_at, published_at, created_at
+	`
+
+	id := uuid.New()
+	now := time.Now()
+
+	status := enums.Scheduled
+	var publishedAt *time.Time
+
+	if createPost.ScheduledAt != nil && createPost.ScheduledAt.Before(now) || createPost.ScheduledAt.Equal(now) {
+		status = enums.Posted
+		publishedAt = &now
+	}
+
+	post := &generated.PublishedPost{}
+	err := r.db.QueryRow(ctx, query,
+		id,
+		newsletterId,
+		userId,
+		createPost.Title,
+		createPost.ContentHtml,
+		createPost.ContentText,
+		status.String(),
+		createPost.ScheduledAt,
+		publishedAt,
+		now,
+	).Scan(
+		&post.Id,
+		&post.NewsletterId,
+		&post.EditorId,
+		&post.Title,
+		&post.ContentHtml,
+		&post.ContentText,
+		&post.Status,
+		&post.ScheduledAt,
+		&post.PublishedAt,
+		&post.CreatedAt,
+	)
+
+	if err != nil {
+		r.logger.ErrorContext(ctx, "REPO: failed to create post", "error", err)
+		return nil, err
+	}
+
+	return post, nil
+}
+
+func (r *PostRepository) UpdatePost(ctx context.Context, postId uuid.UUID, updatePost *generated.PublishPostRequest) (*generated.PublishedPost, error) {
+	query := `
+	UPDATE published_posts 
+	SET title = $2, content_html = $3, content_text = $4, status = $5, scheduled_at = $6, published_at = $7
+	WHERE id = $1
+	RETURNING id, newsletter_id, editor_id, title, content_html, content_text, status, scheduled_at, published_at, created_at
+	`
+
+	now := time.Now()
+
+	originalPost, err := r.GetPostById(ctx, postId)
+	if err != nil {
+		return nil, err
+	}
+
+	status := enums.Scheduled
+	var publishedAt *time.Time
+
+	if originalPost.PublishedAt != nil {
+		status = enums.Posted
+		publishedAt = originalPost.PublishedAt
+	} else if updatePost.ScheduledAt != nil && (updatePost.ScheduledAt.Before(now) || updatePost.ScheduledAt.Equal(now)) {
+		status = enums.Posted
+		publishedAt = &now
+	}
+
+	post := &generated.PublishedPost{}
+	err = r.db.QueryRow(ctx, query,
+		postId,
+		updatePost.Title,
+		updatePost.ContentHtml,
+		updatePost.ContentText,
+		status.String(),
+		updatePost.ScheduledAt,
+		publishedAt,
+	).Scan(
+		&post.Id,
+		&post.NewsletterId,
+		&post.EditorId,
+		&post.Title,
+		&post.ContentHtml,
+		&post.ContentText,
+		&post.Status,
+		&post.ScheduledAt,
+		&post.PublishedAt,
+		&post.CreatedAt,
+	)
+
+	if err != nil {
+		r.logger.ErrorContext(ctx, "REPO: failed to update post", "error", err)
+		return nil, err
+	}
+
+	return post, nil
 }

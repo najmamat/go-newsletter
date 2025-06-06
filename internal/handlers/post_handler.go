@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"go-newsletter/internal/models"
 	"go-newsletter/internal/services"
 	"go-newsletter/internal/utils"
+	"go-newsletter/pkg/generated"
 	"net/http"
 )
 
@@ -102,4 +105,66 @@ func (h *PostHandler) DeletePostById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.responder.RespondJSON(w, http.StatusOK, nil)
+}
+
+func (h *PostHandler) PostPost(w http.ResponseWriter, r *http.Request) {
+	newsletterID, err := uuid.Parse(chi.URLParam(r, "newsletterId"))
+	if err != nil {
+		http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
+		return
+	}
+
+	user, ok := services.GetUserFromContext(r.Context())
+	if !ok {
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
+		return
+	}
+
+	var req generated.PublishPostRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid JSON payload"))
+		return
+	}
+
+	newsletter, err := h.postService.CreatePost(r.Context(), user.UserID, req, newsletterID)
+	if err != nil {
+		h.responder.HandleError(w, r, err)
+		return
+	}
+
+	h.responder.RespondJSON(w, http.StatusCreated, newsletter)
+}
+
+func (h *PostHandler) PutPost(w http.ResponseWriter, r *http.Request) {
+	newsletterID, err := uuid.Parse(chi.URLParam(r, "newsletterId"))
+	if err != nil {
+		http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
+		return
+	}
+
+	postId, err := uuid.Parse(chi.URLParam(r, "postId"))
+	if err != nil {
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+
+	user, ok := services.GetUserFromContext(r.Context())
+	if !ok {
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
+		return
+	}
+
+	var req generated.PublishPostRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid JSON payload"))
+		return
+	}
+
+	post, err := h.postService.UpdatePost(r.Context(), user.UserID, postId, req, newsletterID)
+	if err != nil {
+		h.responder.HandleError(w, r, err)
+		return
+	}
+
+	h.responder.RespondJSON(w, http.StatusOK, post)
 }
