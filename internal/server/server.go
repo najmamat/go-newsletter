@@ -73,10 +73,6 @@ func (s *Server) PutAdminUsersUserIdRevokeAdmin(w http.ResponseWriter, r *http.R
 	s.profileHandler.RevokeAdmin(w, r)
 }
 
-func (s *Server) DeleteAdminUsersUserId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
-}
-
 // PostAuthSignup handles POST /auth/signup endpoint
 func (s *Server) PostAuthSignup(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.PostAuthSignup(w, r)
@@ -144,14 +140,6 @@ func (s *Server) PutNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseW
 
 func (s *Server) PostNewslettersNewsletterIdSubscribe(w http.ResponseWriter, r *http.Request) {
 	s.subscriberHandler.Subscribe(w, r)
-}
-
-func (s *Server) PostNewslettersNewsletterIdUnsubscribe(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
-}
-
-func (s *Server) GetNewslettersNewsletterIdConfirmSubscription(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
 }
 
 func (s *Server) GetNewslettersNewsletterIdSubscribers(w http.ResponseWriter, r *http.Request) {
