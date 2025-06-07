@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"go-newsletter/internal/models"
 	"go-newsletter/internal/services"
 	"go-newsletter/internal/utils"
 	"go-newsletter/pkg/generated"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type PostHandler struct {
@@ -28,21 +29,21 @@ func NewPostHandler(postService *services.PostService, responder *utils.HTTPResp
 func (h *PostHandler) GetPostsByNewsletterId(w http.ResponseWriter, r *http.Request, published bool) {
 	newsletterID, err := uuid.Parse(chi.URLParam(r, "newsletterId"))
 	if err != nil {
-		http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid newsletter ID"))
 		return
 	}
 
 	// Get user from context
 	user, ok := services.GetUserFromContext(r.Context())
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
 		return
 	}
 
 	// Get posts
 	posts, err := h.postService.GetPostsByNewsletterId(r.Context(), newsletterID, user.UserID.String(), published)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.responder.HandleError(w, r, err)
 		return
 	}
 
@@ -52,26 +53,26 @@ func (h *PostHandler) GetPostsByNewsletterId(w http.ResponseWriter, r *http.Requ
 func (h *PostHandler) GetPostById(w http.ResponseWriter, r *http.Request) {
 	newsletterID, err := uuid.Parse(chi.URLParam(r, "newsletterId"))
 	if err != nil {
-		http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid newsletter ID"))
 		return
 	}
 
 	postId, err := uuid.Parse(chi.URLParam(r, "postId"))
 	if err != nil {
-		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid post ID"))
 		return
 	}
 
 	// Get user from context
 	user, ok := services.GetUserFromContext(r.Context())
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
 		return
 	}
 
 	post, err := h.postService.GetPostById(r.Context(), newsletterID, postId, user.UserID.String())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.responder.HandleError(w, r, err)
 		return
 	}
 
@@ -81,26 +82,26 @@ func (h *PostHandler) GetPostById(w http.ResponseWriter, r *http.Request) {
 func (h *PostHandler) DeletePostById(w http.ResponseWriter, r *http.Request) {
 	newsletterID, err := uuid.Parse(chi.URLParam(r, "newsletterId"))
 	if err != nil {
-		http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid newsletter ID"))
 		return
 	}
 
 	postId, err := uuid.Parse(chi.URLParam(r, "postId"))
 	if err != nil {
-		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid post ID"))
 		return
 	}
 
 	// Get user from context
 	user, ok := services.GetUserFromContext(r.Context())
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
 		return
 	}
 
 	err = h.postService.DeletePostById(r.Context(), newsletterID, postId, user.UserID.String())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.responder.HandleError(w, r, err)
 		return
 	}
 
