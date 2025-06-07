@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	// TODO UNCOMMENT THIS - disabled for preserving supabase requests!
+	//"go-newsletter/internal/scheduler"
 	"log/slog"
 	"net/http"
 	"os"
@@ -56,8 +58,16 @@ func main() {
 	profileService := services.NewProfileService(profileRepo, logger)
 	authService := services.NewAuthService(cfg.Supabase.JWTSecret, logger)
 	mailingService := services.NewMailingService(&cfg.Resend, logger)
-	subscriberService := services.NewSubscriberService(subscriberRepo, newsletterRepo, mailingService, cfg, logger)
-	apiServer := server.NewServer(profileService, authService, logger, mailingService, newsletterService, subscriberService)
+	subscriberService := services.NewSubscriberService(subscriberRepo, newsletterService, mailingService, cfg, logger)
+	postRepo := repository.NewPostRepository(dbpool, logger)
+	postService := services.NewPostService(postRepo, newsletterService, subscriberService, mailingService, cfg, logger)
+	responder := utils.NewHTTPResponder(logger)
+	apiServer := server.NewServer(profileService, authService, logger, mailingService, newsletterService, subscriberService, postService, responder)
+
+	// Initialize and start the scheduled post publisher
+	// TODO UNCOMMENT THIS - disabled for preserving supabase requests!
+	// postPublisher := scheduler.NewPostPublisher(postService, logger.With("component", "postPublisher"))
+	// postPublisher.Start()
 
 	// Initialize router and middleware
 	r := setupRouter(logger, apiServer)
@@ -79,6 +89,7 @@ func initializeDatabase(logger *slog.Logger) (*pgxpool.Pool, error) {
 		"port":     os.Getenv("PGPORT"),
 		"dbname":   "postgres",
 		"sslmode":  "require",
+		"timezone": "Europe/Prague",
 	}
 
 	// Convert map to connection string
@@ -154,15 +165,6 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
 			r.Post("/", apiServer.PostNewslettersNewsletterIdSubscribe)
 		})
-		r.Route("/newsletters/{newsletterId}/unsubscribe", func(r chi.Router) {
-			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
-			r.Post("/", apiServer.PostNewslettersNewsletterIdUnsubscribe)
-		})
-		r.Route("/newsletters/{newsletterId}/confirm-subscription", func(r chi.Router) {
-			r.Use(middleware.UUIDParamValidationMiddleware("newsletterId"))
-			// Assuming token is a query param, not a UUID path param here
-			r.Get("/", apiServer.GetNewslettersNewsletterIdConfirmSubscription)
-		})
 		r.Route("/subscribe/confirm/{confirmationToken}", func(r chi.Router) {
 			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 				token := chi.URLParam(r, "confirmationToken")
@@ -223,7 +225,6 @@ func setupRouter(logger *slog.Logger, apiServer *server.Server) chi.Router {
 		r.Get("/admin/users", apiServer.GetAdminUsers)
 		r.Get("/admin/newsletters", apiServer.GetAdminNewsletters)
 		r.With(middleware.UUIDParamValidationMiddleware("newsletterId")).Delete("/admin/newsletters/{newsletterId}", apiServer.DeleteAdminNewslettersNewsletterId)
-		r.With(middleware.UUIDParamValidationMiddleware("userId")).Delete("/admin/users/{userId}", apiServer.DeleteAdminUsersUserId)
 		r.With(middleware.UUIDParamValidationMiddleware("userId")).Put("/admin/users/{userId}/grant-admin", apiServer.PutAdminUsersUserIdGrantAdmin)
 		r.With(middleware.UUIDParamValidationMiddleware("userId")).Put("/admin/users/{userId}/revoke-admin", apiServer.PutAdminUsersUserIdRevokeAdmin)
 	})

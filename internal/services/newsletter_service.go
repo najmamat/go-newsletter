@@ -108,7 +108,8 @@ func (s *NewsletterService) GetNewslettersOwnedByEditor(ctx context.Context, edi
 	return newsletters, nil
 }
 
-func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterID string, editorID string) (*generated.Newsletter, error) {
+// GetNewsletterByIDCheckOwnership returns the newsletter if the user is authorized for it
+func (s *NewsletterService) GetNewsletterByIDCheckOwnership(ctx context.Context, newsletterID string, editorID string) (*generated.Newsletter, error) {
 	// Validate input
 	if err := s.validateNewsletterID(newsletterID); err != nil {
 		return nil, err
@@ -120,12 +121,24 @@ func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterID 
 		return nil, err
 	}
 
-	// Check if the requesting user is the editor of this newsletter
-	if newsletter.EditorId.String() != editorID {
-		s.logger.WarnContext(ctx, "SERVICE: unauthorized access attempt",
-			"requested_editor_id", editorID,
-			"newsletter_editor_id", newsletter.EditorId.String())
-		return nil, models.NewForbiddenError("You don't have access to this newsletter")
+	if err := s.checkNewsletterOwnership(ctx, newsletter, editorID); err != nil {
+		return nil, err
+	}
+
+	return newsletter, nil
+}
+
+// GetNewsletterByID returns the newsletter by ID without checking for ownership
+func (s *NewsletterService) GetNewsletterByID(ctx context.Context, newsletterID string) (*generated.Newsletter, error) {
+	// Validate input
+	if err := s.validateNewsletterID(newsletterID); err != nil {
+		return nil, err
+	}
+
+	newsletter, err := s.repo.GetByID(ctx, newsletterID)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "SERVICE: failed to get newsletter by ID", "error", err)
+		return nil, err
 	}
 
 	return newsletter, nil
@@ -165,12 +178,8 @@ func (s *NewsletterService) UpdateNewsletter(ctx context.Context, editorID strin
 		return nil, err
 	}
 
-	// Check if the requesting user is the editor of this newsletter
-	if newsletter.EditorId.String() != editorID {
-		s.logger.WarnContext(ctx, "SERVICE: unauthorized access attempt",
-			"requested_editor_id", editorID,
-			"newsletter_editor_id", newsletter.EditorId.String())
-		return nil, models.NewForbiddenError("You don't have access to this newsletter")
+	if err := s.checkNewsletterOwnership(ctx, newsletter, editorID); err != nil {
+		return nil, err
 	}
 
 	// Proceed with update
@@ -181,6 +190,18 @@ func (s *NewsletterService) UpdateNewsletter(ctx context.Context, editorID strin
 	}
 
 	return updatedNewsletter, nil
+}
+
+// Check if the requesting user is the editor of this newsletter
+func (s *NewsletterService) checkNewsletterOwnership(ctx context.Context, newsletter *generated.Newsletter, editorId string) error {
+	if newsletter.EditorId.String() != editorId {
+		s.logger.WarnContext(ctx, "SERVICE: unauthorized access attempt",
+			"requested_editor_id", editorId,
+			"newsletter_editor_id", newsletter.EditorId.String())
+		return models.NewForbiddenError("You don't have access to this newsletter")
+	}
+
+	return nil
 }
 
 func (s *NewsletterService) DeleteNewsletter(ctx context.Context, editorID string, newsletterID string) error {
@@ -200,12 +221,8 @@ func (s *NewsletterService) DeleteNewsletter(ctx context.Context, editorID strin
 		return err
 	}
 
-	// Check if the requesting user is the editor of this newsletter
-	if newsletter.EditorId.String() != editorID {
-		s.logger.WarnContext(ctx, "SERVICE: unauthorized deletion attempt",
-			"requested_editor_id", editorID,
-			"newsletter_editor_id", newsletter.EditorId.String())
-		return models.NewForbiddenError("You don't have access to this newsletter")
+	if err := s.checkNewsletterOwnership(ctx, newsletter, editorID); err != nil {
+		return err
 	}
 
 	// Proceed with deletion

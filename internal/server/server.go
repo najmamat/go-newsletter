@@ -16,23 +16,26 @@ type Server struct {
 	authHandler       *handlers.AuthHandler
 	authService       *services.AuthService
 	mailingService    *services.MailingService
+	postService       *services.PostService
 	newsletterHandler *handlers.NewsletterHandler
 	subscriberHandler *handlers.SubscriberHandler
+	postHandler       *handlers.PostHandler
 	responder         *utils.HTTPResponder
 	logger            *slog.Logger // Keep logger for non-HTTP operations
 }
 
 // NewServer creates a new server instance
-func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService, subscriberService *services.SubscriberService) *Server {
+func NewServer(profileService *services.ProfileService, authService *services.AuthService, logger *slog.Logger, mailingService *services.MailingService, newsletterService *services.NewsletterService, subscriberService *services.SubscriberService, postService *services.PostService, responder *utils.HTTPResponder) *Server {
 	return &Server{
+		logger:            logger,
 		profileHandler:    handlers.NewProfileHandler(profileService, authService, logger),
 		authHandler:       handlers.NewAuthHandler(authService, logger),
 		authService:       authService,
 		mailingService:    mailingService,
-		newsletterHandler: handlers.NewNewsletterHandler(newsletterService, profileService, logger),
-		subscriberHandler: handlers.NewSubscriberHandler(subscriberService),
-		responder:         utils.NewHTTPResponder(logger),
-		logger:            logger,
+		postService:       postService,
+		newsletterHandler: handlers.NewNewsletterHandler(newsletterService, profileService, responder),
+		subscriberHandler: handlers.NewSubscriberHandler(subscriberService, responder),
+		postHandler:       handlers.NewPostHandler(postService, responder),
 	}
 }
 
@@ -70,10 +73,6 @@ func (s *Server) PutAdminUsersUserIdRevokeAdmin(w http.ResponseWriter, r *http.R
 	s.profileHandler.RevokeAdmin(w, r)
 }
 
-func (s *Server) DeleteAdminUsersUserId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
-}
-
 // PostAuthSignup handles POST /auth/signup endpoint
 func (s *Server) PostAuthSignup(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.PostAuthSignup(w, r)
@@ -103,7 +102,7 @@ func (s *Server) DeleteNewslettersNewsletterId(w http.ResponseWriter, r *http.Re
 	s.newsletterHandler.DeleteNewsletter(w, r)
 }
 
-// GetNewsletters handles GET /newsletters/{newsletterId}
+// GetNewslettersNewsletterId handles GET /newsletters/{newsletterId}
 func (s *Server) GetNewslettersNewsletterId(w http.ResponseWriter, r *http.Request) {
 	s.newsletterHandler.GetNewsletterByID(w, r)
 }
@@ -113,40 +112,34 @@ func (s *Server) PutNewslettersNewsletterId(w http.ResponseWriter, r *http.Reque
 	s.newsletterHandler.PutNewsletters(w, r)
 }
 
+// GetNewslettersNewsletterIdPosts handles GET /newsletters/{newsletterId}/posts and returns only published posts
 func (s *Server) GetNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.GetPostsByNewsletterId(w, r, true)
 }
 
 func (s *Server) PostNewslettersNewsletterIdPosts(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.PostPost(w, r)
 }
 
+// GetNewslettersNewsletterIdScheduledPosts handles GET /newsletters/{newsletterId}/posts and returns only unpublished posts
 func (s *Server) GetNewslettersNewsletterIdScheduledPosts(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.GetPostsByNewsletterId(w, r, false)
 }
 
 func (s *Server) DeleteNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.DeletePostById(w, r)
 }
 
 func (s *Server) GetNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.GetPostById(w, r)
 }
 
 func (s *Server) PutNewslettersNewsletterIdScheduledPostsPostId(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
+	s.postHandler.PutPost(w, r)
 }
 
 func (s *Server) PostNewslettersNewsletterIdSubscribe(w http.ResponseWriter, r *http.Request) {
 	s.subscriberHandler.Subscribe(w, r)
-}
-
-func (s *Server) PostNewslettersNewsletterIdUnsubscribe(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
-}
-
-func (s *Server) GetNewslettersNewsletterIdConfirmSubscription(w http.ResponseWriter, r *http.Request) {
-	s.notImplemented(w, r)
 }
 
 func (s *Server) GetNewslettersNewsletterIdSubscribers(w http.ResponseWriter, r *http.Request) {

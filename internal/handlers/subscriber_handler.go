@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"go-newsletter/internal/utils"
 	"net/http"
 
 	"go-newsletter/internal/services"
@@ -14,11 +15,13 @@ import (
 
 type SubscriberHandler struct {
 	subscriberService *services.SubscriberService
+	responder         *utils.HTTPResponder
 }
 
-func NewSubscriberHandler(subscriberService *services.SubscriberService) *SubscriberHandler {
+func NewSubscriberHandler(subscriberService *services.SubscriberService, responder *utils.HTTPResponder) *SubscriberHandler {
 	return &SubscriberHandler{
 		subscriberService: subscriberService,
+		responder:         responder,
 	}
 }
 
@@ -40,10 +43,10 @@ func (h *SubscriberHandler) ListSubscribers(w http.ResponseWriter, r *http.Reque
 	// Get subscribers
 	subscribers, err := h.subscriberService.ListSubscribers(r.Context(), newsletterID, user.UserID.String())
 	if err != nil {
-		switch err {
-		case services.ErrNotFound:
+		switch {
+		case errors.Is(err, services.ErrNotFound):
 			http.Error(w, "Newsletter not found", http.StatusNotFound)
-		case services.ErrForbidden:
+		case errors.Is(err, services.ErrForbidden):
 			http.Error(w, "You don't have permission to access this newsletter", http.StatusForbidden)
 		default:
 			http.Error(w, "Failed to list subscribers", http.StatusInternalServerError)
@@ -51,15 +54,7 @@ func (h *SubscriberHandler) ListSubscribers(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	response := map[string]interface{}{
-		"subscribers": subscribers,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
+	h.responder.RespondJSON(w, http.StatusOK, subscribers)
 }
 
 // Subscribe handles POST /newsletters/{newsletterId}/subscribe
@@ -76,12 +71,12 @@ func (h *SubscriberHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	subscriber, err := h.subscriberService.Subscribe(r.Context(), newsletterID, req.Email)
+	_, err = h.subscriberService.Subscribe(r.Context(), newsletterID, req.Email)
 	if err != nil {
-		switch err {
-		case services.ErrNotFound:
+		switch {
+		case errors.Is(err, services.ErrNotFound):
 			http.Error(w, "Newsletter not found", http.StatusNotFound)
-		case services.ErrAlreadySubscribed:
+		case errors.Is(err, services.ErrAlreadySubscribed):
 			http.Error(w, "Already subscribed to this newsletter", http.StatusConflict)
 		default:
 			http.Error(w, "Failed to subscribe to newsletter", http.StatusInternalServerError)
@@ -89,16 +84,13 @@ func (h *SubscriberHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]interface{}{
-		"message":    "Subscription successful. Please check your email to confirm your subscription.",
-		"subscriber": subscriber,
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: "Subscription successful. Please check your email to confirm your subscription.",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
+	h.responder.RespondJSON(w, http.StatusOK, response)
 }
 
 // ConfirmSubscription handles the confirmation of a subscription using a token
@@ -119,9 +111,7 @@ func (h *SubscriberHandler) ConfirmSubscription(w http.ResponseWriter, r *http.R
 		Message: "Subscription confirmed successfully",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	h.responder.RespondJSON(w, http.StatusOK, response)
 }
 
 // Unsubscribe handles the unsubscription using a token
@@ -142,7 +132,5 @@ func (h *SubscriberHandler) Unsubscribe(w http.ResponseWriter, r *http.Request, 
 		Message: "Successfully unsubscribed from the newsletter",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-} 
+	h.responder.RespondJSON(w, http.StatusOK, response)
+}

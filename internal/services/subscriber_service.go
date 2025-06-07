@@ -22,37 +22,37 @@ var (
 )
 
 type SubscriberService struct {
-	subscriberRepo *repository.SubscriberRepository
-	newsletterRepo *repository.NewsletterRepository
-	mailingService *MailingService
-	logger         *slog.Logger
-	config         *config.Config
+	subscriberRepo    *repository.SubscriberRepository
+	newsletterService *NewsletterService
+	mailingService    *MailingService
+	logger            *slog.Logger
+	config            *config.Config
 }
 
 func NewSubscriberService(
 	subscriberRepo *repository.SubscriberRepository,
-	newsletterRepo *repository.NewsletterRepository,
+	newsletterService *NewsletterService,
 	mailingService *MailingService,
 	config *config.Config,
 	logger *slog.Logger,
 ) *SubscriberService {
 	return &SubscriberService{
-		subscriberRepo: subscriberRepo,
-		newsletterRepo: newsletterRepo,
-		mailingService: mailingService,
-		config:         config,
-		logger:         logger,
+		subscriberRepo:    subscriberRepo,
+		newsletterService: newsletterService,
+		mailingService:    mailingService,
+		config:            config,
+		logger:            logger,
 	}
 }
 
-// ListSubscribers retrieves a list of subscribers for a newsletter
+// ListSubscribers retrieves a list of subscribers for a newsletter, checks if the user is the owner of the newsletter
 func (s *SubscriberService) ListSubscribers(
 	ctx context.Context,
 	newsletterID uuid.UUID,
 	editorID string,
 ) ([]*generated.Subscriber, error) {
 	// Verify newsletter ownership
-	newsletter, err := s.newsletterRepo.GetByID(ctx, newsletterID.String())
+	_, err := s.newsletterService.GetNewsletterByIDCheckOwnership(ctx, newsletterID.String(), editorID)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, ErrNotFound
@@ -61,9 +61,21 @@ func (s *SubscriberService) ListSubscribers(
 		return nil, err
 	}
 
-	if newsletter.EditorId.String() != editorID {
-		return nil, ErrForbidden
+	// Get subscribers
+	subscribers, err := s.subscriberRepo.ListByNewsletterID(ctx, newsletterID)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to list subscribers", "error", err)
+		return nil, err
 	}
+
+	return subscribers, nil
+}
+
+// ListSubscribers retrieves a list of subscribers for a newsletter
+func (s *SubscriberService) ListSubscribersWithouCheck(
+	ctx context.Context,
+	newsletterID uuid.UUID,
+) ([]*generated.Subscriber, error) {
 
 	// Get subscribers
 	subscribers, err := s.subscriberRepo.ListByNewsletterID(ctx, newsletterID)
@@ -82,7 +94,7 @@ func (s *SubscriberService) Subscribe(
 	email openapi_types.Email,
 ) (*generated.Subscriber, error) {
 	// Check if newsletter exists
-	newsletter, err := s.newsletterRepo.GetByID(ctx, newsletterID.String())
+	newsletter, err := s.newsletterService.GetNewsletterByID(ctx, newsletterID.String())
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, ErrNotFound

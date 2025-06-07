@@ -6,7 +6,6 @@ import (
 	"go-newsletter/internal/services"
 	"go-newsletter/internal/utils"
 	"go-newsletter/pkg/generated"
-	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -18,11 +17,11 @@ type NewsletterHandler struct {
 	responder      *utils.HTTPResponder
 }
 
-func NewNewsletterHandler(service *services.NewsletterService, profileService *services.ProfileService, logger *slog.Logger) *NewsletterHandler {
+func NewNewsletterHandler(service *services.NewsletterService, profileService *services.ProfileService, responder *utils.HTTPResponder) *NewsletterHandler {
 	return &NewsletterHandler{
 		service:        service,
 		profileService: profileService,
-		responder:      utils.NewHTTPResponder(logger),
+		responder:      responder,
 	}
 }
 
@@ -55,7 +54,7 @@ func (h *NewsletterHandler) GetNewsletterByID(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	newsletter, err := h.service.GetNewsletterByID(r.Context(), newsletterID, user.UserID.String())
+	newsletter, err := h.service.GetNewsletterByIDCheckOwnership(r.Context(), newsletterID, user.UserID.String())
 	if err != nil {
 		h.responder.HandleError(w, r, err)
 		return
