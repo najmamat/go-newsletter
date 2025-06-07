@@ -62,7 +62,7 @@ func (p *PostPublisher) publishScheduledPosts() {
 	defer cancel()
 	p.logger.InfoContext(ctx, "Checking for scheduled posts to publish")
 
-	now := time.Now()
+	now := time.Now().UTC()
 	p.logger.InfoContext(ctx, "Current time", "time", now.Format(time.RFC3339))
 
 	// Get all scheduled posts that are due for publication
