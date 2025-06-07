@@ -60,7 +60,7 @@ func main() {
 	mailingService := services.NewMailingService(&cfg.Resend, logger)
 	subscriberService := services.NewSubscriberService(subscriberRepo, newsletterService, mailingService, cfg, logger)
 	postRepo := repository.NewPostRepository(dbpool, logger)
-	postService := services.NewPostService(postRepo, newsletterService, subscriberService, mailingService, logger)
+	postService := services.NewPostService(postRepo, newsletterService, subscriberService, mailingService, cfg, logger)
 	responder := utils.NewHTTPResponder(logger)
 	apiServer := server.NewServer(profileService, authService, logger, mailingService, newsletterService, subscriberService, postService, responder)
 

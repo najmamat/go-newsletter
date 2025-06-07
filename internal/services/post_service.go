@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
+	"go-newsletter/internal/config"
 	"go-newsletter/internal/models"
 	"go-newsletter/internal/models/enums"
 	"go-newsletter/internal/repository"
@@ -20,6 +22,7 @@ type PostService struct {
 	newsletterService *NewsletterService
 	subscriberService *SubscriberService
 	mailingService    *MailingService
+	config            *config.Config
 	logger            *slog.Logger
 }
 
@@ -28,6 +31,7 @@ func NewPostService(
 	newsletterService *NewsletterService,
 	subscriberService *SubscriberService,
 	mailingService *MailingService,
+	config *config.Config,
 	logger *slog.Logger,
 ) *PostService {
 	return &PostService{
@@ -35,6 +39,7 @@ func NewPostService(
 		newsletterService: newsletterService,
 		subscriberService: subscriberService,
 		mailingService:    mailingService,
+		config:            config,
 		logger:            logger,
 	}
 }
@@ -160,30 +165,33 @@ func (s *PostService) sendMailToSubscribers(ctx context.Context, post *generated
 		return nil
 	}
 
-	emailList := make([]string, 0, len(subscribers))
-	for _, subscriber := range subscribers {
-		if *subscriber.IsConfirmed {
-			emailList = append(emailList, string(subscriber.Email))
-		}
-	}
-
-	if len(emailList) == 0 {
-		s.logger.InfoContext(ctx, "No confirmed subscribers for newsletter", "newsletterId", *post.NewsletterId)
-		return nil
-	}
-
 	subject := post.Title
 	if newsletter.Name != "" {
 		subject = newsletter.Name + ": " + post.Title
 	}
 
-	err = s.mailingService.SendMail(emailList, subject, string(post.ContentHtml))
-	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to send newsletter email", "error", err, "postId", post.Id)
-		return err
+	emailCount := 0
+	for _, subscriber := range subscribers {
+		unsubscribeLink := fmt.Sprintf("%s/unsubscribe/%s", s.config.BuildApiBaseUrl(), *subscriber.UnsubscribeToken)
+
+		htmlContentWithUnsubscribe := fmt.Sprintf(`
+			%s
+			<br><br>
+			<hr>
+			<p><small>Pokud už nechcete dostávat tyto zprávy, můžete se <a href="%s">odhlásit zde</a>.</small></p>
+		`, post.ContentHtml, unsubscribeLink)
+
+		err = s.mailingService.SendMail([]string{string(subscriber.Email)}, subject, htmlContentWithUnsubscribe)
+		if err != nil {
+			s.logger.ErrorContext(ctx, "Failed to send newsletter email to subscriber", "error", err, "postId", post.Id, "email", subscriber.Email)
+			// Pokračovat v odesílání i když jeden email selže
+			continue
+		}
+
+		emailCount++
 	}
 
-	s.logger.InfoContext(ctx, "Newsletter email sent successfully", "postId", post.Id, "recipientCount", len(emailList))
+	s.logger.InfoContext(ctx, "Newsletter email sent successfully", "postId", post.Id, "recipientCount", emailCount)
 	return nil
 }
 

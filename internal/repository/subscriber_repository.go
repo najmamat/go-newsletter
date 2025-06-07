@@ -32,7 +32,7 @@ func NewSubscriberRepository(db *pgxpool.Pool, logger *slog.Logger) *SubscriberR
 
 func (r *SubscriberRepository) ListByNewsletterID(ctx context.Context, newsletterID uuid.UUID) ([]*generated.Subscriber, error) {
 	query := `
-		SELECT id, newsletter_id, email, subscribed_at, is_confirmed
+		SELECT id, newsletter_id, email, subscribed_at, is_confirmed, unsubscribe_token
 		FROM subscribers
 		WHERE newsletter_id = $1
 	`
@@ -53,6 +53,7 @@ func (r *SubscriberRepository) ListByNewsletterID(ctx context.Context, newslette
 			&s.Email,
 			&s.SubscribedAt,
 			&s.IsConfirmed,
+			&s.UnsubscribeToken,
 		)
 		if err != nil {
 			r.logger.ErrorContext(ctx, "Failed to scan subscriber row", "error", err)
@@ -98,14 +99,14 @@ func (r *SubscriberRepository) Create(ctx context.Context, newsletterID uuid.UUI
 
 	unsubscribeToken := uuid.New().String()
 	confirmationToken := uuid.New().String()
-	
+
 	subscriber := &generated.Subscriber{
-		Id:            &uuid.UUID{},
-		NewsletterId:  &newsletterID,
-		Email:         openapi_types.Email(email),
-		SubscribedAt:  &time.Time{},
-		IsConfirmed:   new(bool),
-		UnsubscribeToken: &unsubscribeToken,
+		Id:                &uuid.UUID{},
+		NewsletterId:      &newsletterID,
+		Email:             openapi_types.Email(email),
+		SubscribedAt:      &time.Time{},
+		IsConfirmed:       new(bool),
+		UnsubscribeToken:  &unsubscribeToken,
 		ConfirmationToken: &confirmationToken,
 	}
 
