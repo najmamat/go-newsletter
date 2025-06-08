@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
+	"go-newsletter/internal/models"
 	"go-newsletter/internal/utils"
 	"net/http"
 
@@ -29,28 +29,21 @@ func NewSubscriberHandler(subscriberService *services.SubscriberService, respond
 func (h *SubscriberHandler) ListSubscribers(w http.ResponseWriter, r *http.Request) {
 	newsletterID, err := uuid.Parse(chi.URLParam(r, "newsletterId"))
 	if err != nil {
-		http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid newsletter ID"))
 		return
 	}
 
 	// Get user from context
 	user, ok := services.GetUserFromContext(r.Context())
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		h.responder.HandleError(w, r, models.NewUnauthorizedError("User not authenticated"))
 		return
 	}
 
 	// Get subscribers
 	subscribers, err := h.subscriberService.ListSubscribers(r.Context(), newsletterID, user.UserID.String())
 	if err != nil {
-		switch {
-		case errors.Is(err, services.ErrNotFound):
-			http.Error(w, "Newsletter not found", http.StatusNotFound)
-		case errors.Is(err, services.ErrForbidden):
-			http.Error(w, "You don't have permission to access this newsletter", http.StatusForbidden)
-		default:
-			http.Error(w, "Failed to list subscribers", http.StatusInternalServerError)
-		}
+		h.responder.HandleError(w, r, err)
 		return
 	}
 
@@ -61,26 +54,19 @@ func (h *SubscriberHandler) ListSubscribers(w http.ResponseWriter, r *http.Reque
 func (h *SubscriberHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	newsletterID, err := uuid.Parse(chi.URLParam(r, "newsletterId"))
 	if err != nil {
-		http.Error(w, "Invalid newsletter ID", http.StatusBadRequest)
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid newsletter ID"))
 		return
 	}
 
 	var req generated.SubscriptionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		h.responder.HandleError(w, r, models.NewBadRequestError("Invalid request body"))
 		return
 	}
 
 	_, err = h.subscriberService.Subscribe(r.Context(), newsletterID, req.Email)
 	if err != nil {
-		switch {
-		case errors.Is(err, services.ErrNotFound):
-			http.Error(w, "Newsletter not found", http.StatusNotFound)
-		case errors.Is(err, services.ErrAlreadySubscribed):
-			http.Error(w, "Already subscribed to this newsletter", http.StatusConflict)
-		default:
-			http.Error(w, "Failed to subscribe to newsletter", http.StatusInternalServerError)
-		}
+		h.responder.HandleError(w, r, err)
 		return
 	}
 
@@ -97,11 +83,7 @@ func (h *SubscriberHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 func (h *SubscriberHandler) ConfirmSubscription(w http.ResponseWriter, r *http.Request, confirmationToken string) {
 	err := h.subscriberService.ConfirmSubscription(r.Context(), confirmationToken)
 	if err != nil {
-		if errors.Is(err, services.ErrNotFound) {
-			http.Error(w, "Invalid or expired confirmation token", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "Failed to confirm subscription", http.StatusInternalServerError)
+		h.responder.HandleError(w, r, err)
 		return
 	}
 
@@ -118,11 +100,7 @@ func (h *SubscriberHandler) ConfirmSubscription(w http.ResponseWriter, r *http.R
 func (h *SubscriberHandler) Unsubscribe(w http.ResponseWriter, r *http.Request, unsubscribeToken string) {
 	err := h.subscriberService.Unsubscribe(r.Context(), unsubscribeToken)
 	if err != nil {
-		if errors.Is(err, services.ErrNotFound) {
-			http.Error(w, "Invalid or expired unsubscribe token", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "Failed to unsubscribe", http.StatusInternalServerError)
+		h.responder.HandleError(w, r, err)
 		return
 	}
 
